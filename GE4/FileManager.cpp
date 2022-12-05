@@ -98,256 +98,130 @@ ControlPoint* FileManager::GetSkinningInformation(FbxSkin* skinNode, GOFile::MES
 
 	return controlpointsPtr;
 }
-//void FileManager::GetBlendShapes(FbxGeometry* geometry, fbxsdk::FbxScene* scene, FbxMesh* meshNode, GOFile::MESH& mesh)
-//{
-//	bool shouldSwitchAxisSystem = false;
-//	FbxAxisSystem leftAxis(FbxAxisSystem::DirectX);
-//
-//	if (m_currentAxisSystem.GetCoorSystem() != leftAxis.GetCoorSystem())
-//	{
-//		shouldSwitchAxisSystem = true;
-//	}
-//
-//	int blendShapeDeformerCount = geometry->GetDeformerCount(FbxDeformer::eBlendShape);
-//	FbxAnimStack* stack = scene->GetSrcObject<FbxAnimStack>(0);
-//	FbxTakeInfo* take = scene->GetTakeInfo(stack->GetName());
-//
-//	FbxTime timeInfo = take->mLocalTimeSpan.GetDuration();
-//
-//	m_fileinfo.animationLenght = (float)timeInfo.GetFrameCountPrecise();
-//	int layerCount = stack->GetMemberCount<FbxAnimLayer>();
-//	for (int bsd = 0; bsd < blendShapeDeformerCount; bsd++)
-//	{
-//		FbxBlendShape* blendShape = (FbxBlendShape*)geometry->GetDeformer(bsd, FbxDeformer::eBlendShape);
-//		int blendShapeCount = blendShape->GetBlendShapeChannelCount();
-//		/*m_blendshapes
-//		m_morphTargets.resize(blendShapeCount);
-//		m_morphKeyframes.resize(blendShapeCount);
-//		m_morphVertices.resize(blendShapeCount);
-//		m_morphIndices.resize(blendShapeCount);*/
-//		for (int layer = 0; layer < layerCount; layer++)
-//		{
-//			FbxAnimLayer* animLayer = stack->GetMember<FbxAnimLayer>(layer);
-//
-//			for (int bs = 0; bs < blendShapeCount; bs++)
-//			{
-//				GOFile::MORPH_TARGET mt;
-//				FbxBlendShapeChannel* channel = blendShape->GetBlendShapeChannel(bs);
-//				
-//				strcpy_s(mt.sourceName, mesh.meshName);
-//				strcpy_s(mt.name, channel->GetName());
-//				FbxAnimCurve* animCurve = geometry->GetShapeChannel(bsd, bs, animLayer);
-//				if (animCurve)
-//				{
-//					int keyCount = animCurve->KeyGetCount();
-//					/*m_morphKeyframes[bs].resize(keyCount);*/
-//					for (int key = 0; key < keyCount; key++)
-//					{
-//						GOFile::MORPH_KEYFRAME kf;
-//						kf.weight = animCurve->KeyGetValue(key) / 100.0f;
-//						kf.timeStamp = (float)animCurve->KeyGetTime(key).GetFrameCountPrecise();
-//					}
-//
-//					mt.morphKeyframeCount = (unsigned int)keyCount;
-//				}
-//				else
-//				{
-//					m_morphKeyframes.clear();
-//				}
-//				FbxShape* shape = channel->GetTargetShape(0);
-//				FbxLayerElementArrayTemplate<FbxVector4>* narr = nullptr;
-//				bool normalBool = shape->GetNormals(&narr);
-//				FbxLayerElementArrayTemplate<FbxVector4>* tarr = nullptr;
-//				bool tangentBool = shape->GetTangents(&tarr);
-//				FbxLayerElementArrayTemplate<FbxVector4>* barr = nullptr;
-//				bool biNormalsBool = shape->GetBinormals(&barr);
-//				FbxLayerElementArrayTemplate<int>* nInd = nullptr;
-//				bool normalIndiceseBool = shape->GetNormalsIndices(&nInd);
-//				FbxLayerElementArrayTemplate<int>* tInd = nullptr;
-//				bool tangentIndiceseBool = shape->GetTangentsIndices(&tInd);
-//				FbxLayerElementArrayTemplate<int>* bInd = nullptr;
-//				bool biNormalIndiceseBool = shape->GetBinormalsIndices(&bInd);
-//				int* posIndices = shape->GetControlPointIndices();
-//				FbxVector4* cp = shape->GetControlPoints();
-//
-//				//
-//				FbxAMatrix inverseT;
-//				inverseT.SetIdentity();
-//				FbxAMatrix globalTransform;
-//				globalTransform.SetIdentity();
-//
-//				//FbxAMatrix localMatrix = geometry->GetNode()->EvaluateLocalTransform();
-//
-//				//FbxNode* pParentNode = geometry->GetNode()->GetParent();
-//				//FbxAMatrix parentMatrix = pParentNode->EvaluateLocalTransform();
-//				//while ((pParentNode = pParentNode->GetParent()) != NULL)
-//				//{
-//				//	parentMatrix = pParentNode->EvaluateLocalTransform() * parentMatrix;
-//				//}
-//
-//
-//				//;// = meshNode->GetNode()->EvaluateGlobalTransform();
-//				//globalTransform.SetIdentity();
-//				//FbxAMatrix geoMat;
-//				//geoMat.SetIdentity();
-//				//geoMat.SetS(geometry->GetNode()->GetGeometricScaling(FbxNode::EPivotSet::eSourcePivot));
-//				//geoMat.SetR(geometry->GetNode()->GetGeometricRotation(FbxNode::EPivotSet::eSourcePivot));
-//				//geoMat.SetT(geometry->GetNode()->GetGeometricTranslation(FbxNode::EPivotSet::eSourcePivot));
-//
-//				//globalTransform = parentMatrix * localMatrix * geoMat;
-//
-//				//inverseT = globalTransform.Inverse();
-//				//inverseT.Transpose();
-//
-//				//
-//
-//
-//
-//				std::map< unsigned int, unsigned int> controlTargets;
-//				std::map< unsigned int, unsigned int> controlTargets2;
-//				int c = 0;
-//				std::vector<IndexStruct> totalIndices;
-//				for (int i = 0; i < shape->GetControlPointIndicesCount(); i++)
-//				{
-//					IndexStruct indexStruct;
-//					indexStruct.p = cp[posIndices[i]];
-//					if (normalBool && normalIndiceseBool)
-//					{
-//						indexStruct.n = narr->GetAt(nInd->GetAt(i));
-//					}
-//					else
-//					{
-//						indexStruct.n.mData[0] = 0;
-//						indexStruct.n.mData[1] = 0;
-//						indexStruct.n.mData[2] = 0;
-//					}
-//					if (tangentBool && tangentIndiceseBool)
-//					{
-//						indexStruct.t = tarr->GetAt(tInd->GetAt(i));
-//					}
-//					else
-//					{
-//						indexStruct.t.mData[0] = 0;
-//						indexStruct.t.mData[1] = 0;
-//						indexStruct.t.mData[2] = 0;
-//					}
-//					if (biNormalsBool && biNormalIndiceseBool)
-//					{
-//						indexStruct.b = barr->GetAt(bInd->GetAt(i));
-//					}
-//					else
-//					{
-//						indexStruct.b.mData[0] = 0;
-//						indexStruct.b.mData[1] = 0;
-//						indexStruct.b.mData[2] = 0;
-//					}
-//
-//
-//					/*unsigned int correctIndex = posIndices[i];*/
-//					auto it = std::find(totalIndices.begin(), totalIndices.end(), indexStruct);
-//					/*X::MORPH_INDEX morphIndex;*/
-//
-//					if (it == totalIndices.end())
-//					{
-//						totalIndices.push_back(indexStruct);
-//						X::MORPH_VERTEX vertex;
-//
-//						if (global)
-//						{
-//							FbxDouble4 transformedT = globalTransform.MultT(indexStruct.p.mData);
-//							indexStruct.p.mData[0] = transformedT[0];
-//							indexStruct.p.mData[1] = transformedT[1];
-//							indexStruct.p.mData[2] = transformedT[2];
-//
-//							FbxDouble4 transformedN = inverseT.MultR(indexStruct.n.mData);
-//							indexStruct.n.mData[0] = transformedN[0];
-//							indexStruct.n.mData[1] = transformedN[1];
-//							indexStruct.n.mData[2] = transformedN[2];
-//
-//							FbxDouble4 transformedTan = inverseT.MultR(indexStruct.t.mData);
-//							indexStruct.t.mData[0] = transformedTan[0];
-//							indexStruct.t.mData[1] = transformedTan[1];
-//							indexStruct.t.mData[2] = transformedTan[2];
-//
-//							FbxDouble4 transformedBN = inverseT.MultR(indexStruct.b.mData);
-//							indexStruct.b.mData[0] = transformedBN[0];
-//							indexStruct.b.mData[1] = transformedBN[1];
-//							indexStruct.b.mData[2] = transformedBN[2];
-//						}
-//
-//
-//						if (shouldSwitchAxisSystem)
-//						{
-//							vertex.posX = (float)indexStruct.p.mData[0];
-//							vertex.posY = (float)indexStruct.p.mData[1];
-//							vertex.posZ = -(float)indexStruct.p.mData[2];
-//							vertex.normalX = (float)indexStruct.n.mData[0];
-//							vertex.normalY = (float)indexStruct.n.mData[1];
-//							vertex.normalZ = -(float)indexStruct.n.mData[2];
-//							vertex.tangentX = (float)indexStruct.t.mData[0];
-//							vertex.tangentY = (float)indexStruct.t.mData[1];
-//							vertex.tangentZ = -(float)indexStruct.t.mData[2];
-//							vertex.biNormalX = (float)indexStruct.b.mData[0];
-//							vertex.biNormalY = (float)indexStruct.b.mData[1];
-//							vertex.biNormalZ = -(float)indexStruct.b.mData[2];
-//						}
-//						else
-//						{
-//							vertex.posX = (float)indexStruct.p.mData[0];
-//							vertex.posY = (float)indexStruct.p.mData[1];
-//							vertex.posZ = (float)indexStruct.p.mData[2];
-//							vertex.normalX = (float)indexStruct.n.mData[0];
-//							vertex.normalY = (float)indexStruct.n.mData[1];
-//							vertex.normalZ = (float)indexStruct.n.mData[2];
-//							vertex.tangentX = (float)indexStruct.t.mData[0];
-//							vertex.tangentY = (float)indexStruct.t.mData[1];
-//							vertex.tangentZ = (float)indexStruct.t.mData[2];
-//							vertex.biNormalX = (float)indexStruct.b.mData[0];
-//							vertex.biNormalY = (float)indexStruct.b.mData[1];
-//							vertex.biNormalZ = (float)indexStruct.b.mData[2];
-//						}
-//						m_morphVertices[bs].push_back(vertex);
-//
-//
-//						controlTargets.insert({ (unsigned int)posIndices[i], c++ });
-//					}
-//					else
-//					{
-//
-//						/*controlTargets2.insert({ (unsigned int)posIndices[i] , std::distance(totalIndices.begin(), it) });*/
-//					}
-//				}
-//
-//
-//				X::MORPH_INDEX morphIndex;
-//				std::vector<unsigned int> tempTest;
-//				for (int i = 0; i < m_blendShapeC.size(); i++)
-//				{
-//					auto it = std::find(tempTest.begin(), tempTest.end(), m_blendShapeC[i].controlPointIndex);
-//					if (it == tempTest.end())
-//					{
-//						if (controlTargets.find(m_blendShapeC[i].controlPointIndex) != controlTargets.end())
-//						{
-//							morphIndex.targetIndex = controlTargets[m_blendShapeC[i].controlPointIndex];
-//							morphIndex.sourceIndex = m_blendShapeC[i].sourceIndex;
-//							m_morphIndices[bs].push_back(morphIndex);
-//
-//						}
-//						tempTest.push_back(m_blendShapeC[i].controlPointIndex);
-//					}
-//
-//				}
-//				m_morphIndices[bs] = m_morphIndices[bs];
-//				m_morphVertices[bs] = m_morphVertices[bs];
-//				m_morphTargets[bs].indexCount = (unsigned int)m_morphIndices[bs].size();
-//				m_morphTargets[bs].vertexCount = (unsigned int)m_morphVertices[bs].size();
-//			}
-//
-//		}
-//
-//
-//	}
-//}
+void FileManager::GetBlendShapes(FbxGeometry* geometry, fbxsdk::FbxScene* scene, FbxMesh* meshNode, GOFile::MESH& mesh)
+{
+	bool shouldSwitchAxisSystem = false;
+	FbxAxisSystem leftAxis(FbxAxisSystem::DirectX);
+
+	if (m_currentAxisSystem.GetCoorSystem() != leftAxis.GetCoorSystem())
+	{
+		shouldSwitchAxisSystem = true;
+	}
+
+	int blendShapeDeformerCount = geometry->GetDeformerCount(FbxDeformer::eBlendShape);
+	FbxAnimStack* stack = scene->GetSrcObject<FbxAnimStack>(0);
+	FbxTakeInfo* take = scene->GetTakeInfo(stack->GetName());
+
+	FbxTime timeInfo = take->mLocalTimeSpan.GetDuration();
+	
+	m_fileinfo.animationLenght = (float)timeInfo.GetFrameCountPrecise();
+	int layerCount = stack->GetMemberCount<FbxAnimLayer>();
+	for (int bsd = 0; bsd < blendShapeDeformerCount; bsd++)
+	{
+		FbxBlendShape* blendShape = (FbxBlendShape*)geometry->GetDeformer(bsd, FbxDeformer::eBlendShape);
+		int blendShapeCount = blendShape->GetBlendShapeChannelCount();
+		
+		for (int layer = 0; layer < layerCount; layer++)
+		{
+			FbxAnimLayer* animLayer = stack->GetMember<FbxAnimLayer>(layer);
+
+			for (int bs = 0; bs < blendShapeCount; bs++)
+			{
+				GOFile::MORPH_TARGET mt;
+				FbxBlendShapeChannel* channel = blendShape->GetBlendShapeChannel(bs);
+				
+				strcpy_s(mt.sourceName, mesh.meshName);
+				strcpy_s(mt.name, channel->GetName());
+				FbxAnimCurve* animCurve = geometry->GetShapeChannel(bsd, bs, animLayer);
+				Array<GOFile::MORPH_KEYFRAME> keyframes;
+				if (animCurve)
+				{
+					int keyCount = animCurve->KeyGetCount();
+					
+					for (int key = 0; key < keyCount; key++)
+					{
+						GOFile::MORPH_KEYFRAME kf;
+						kf.weight = animCurve->KeyGetValue(key) / 100.0f;
+						kf.timeStamp = (float)animCurve->KeyGetTime(key).GetFrameCountPrecise();
+						keyframes.push_back(kf);
+					}
+					m_morphKeyframes.push_back(keyframes);
+					mt.morphKeyframeCount = (unsigned int)keyCount;
+				}
+				FbxShape* shape = channel->GetTargetShape(0); //only one target per shape.
+				
+
+				FbxLayerElementArrayTemplate<FbxVector4>* narr = nullptr;
+				bool normalBool = shape->GetNormals(&narr);
+				FbxLayerElementArrayTemplate<FbxVector4>* tarr = nullptr;
+				bool tangentBool = shape->GetTangents(&tarr);
+				FbxLayerElementArrayTemplate<FbxVector4>* barr = nullptr;
+				bool biNormalsBool = shape->GetBinormals(&barr);
+				FbxLayerElementArrayTemplate<int>* nInd = nullptr;
+				bool normalIndiceseBool = shape->GetNormalsIndices(&nInd);
+				FbxLayerElementArrayTemplate<int>* tInd = nullptr;
+				bool tangentIndiceseBool = shape->GetTangentsIndices(&tInd);
+				FbxLayerElementArrayTemplate<int>* bInd = nullptr;
+				bool biNormalIndiceseBool = shape->GetBinormalsIndices(&bInd);
+				int* posIndices = shape->GetControlPointIndices();
+				FbxVector4* cp = shape->GetControlPoints();
+
+				
+				Array<GOFile::MORPH_VERTEX> mvertices;
+				for (int j = 0; j < shape->GetControlPointIndicesCount(); j++)
+				{
+					GOFile::MORPH_VERTEX mvertex;
+					GOFile::MORPH_INDEX mindex;
+					mvertex.posX = cp[posIndices[j]].mData[0];
+					mvertex.posY = cp[posIndices[j]].mData[1];
+					mvertex.posZ = cp[posIndices[j]].mData[2];
+					mindex.targetIndex = posIndices[j];
+
+					if (normalBool && narr && nInd->GetCount() == shape->GetControlPointIndicesCount())
+					{
+						mvertex.normalX = narr->GetAt(nInd->GetAt(j)).mData[0];
+						mvertex.normalY = narr->GetAt(nInd->GetAt(j)).mData[1];
+						mvertex.normalZ = narr->GetAt(nInd->GetAt(j)).mData[2];
+						
+					}
+					if (tangentBool && tarr && tInd->GetCount() == shape->GetControlPointIndicesCount())
+					{
+						mvertex.tangentX = tarr->GetAt(tInd->GetAt(j)).mData[0];
+						mvertex.tangentY = tarr->GetAt(tInd->GetAt(j)).mData[1];
+						mvertex.tangentZ = tarr->GetAt(tInd->GetAt(j)).mData[2];
+
+					}
+					if (biNormalsBool && barr && bInd->GetCount() == shape->GetControlPointIndicesCount())
+					{
+						mvertex.biNormalX = barr->GetAt(bInd->GetAt(j)).mData[0];
+						mvertex.biNormalY = barr->GetAt(bInd->GetAt(j)).mData[1];
+						mvertex.biNormalZ = barr->GetAt(bInd->GetAt(j)).mData[2];
+
+					}
+
+					if (shouldSwitchAxisSystem)
+					{
+						
+						mvertex.posZ = -mvertex.posZ;
+						
+						mvertex.normalZ = -mvertex.normalZ;
+						
+						mvertex.tangentZ = -mvertex.tangentZ;
+						
+						mvertex.biNormalZ = -mvertex.biNormalZ;
+					}
+					mvertices.push_back(mvertex);
+				}
+
+				m_blendshapes.push_back(mt);
+				m_morphVertices.push_back(mvertices);
+			}
+			
+		}
+		
+
+	}
+}
 //I need to double check this is an accurate way of getting vertex data.
 void FileManager::GetVerticesAndIndices(Array<GOFile::VERTEX>& vertices, Array<unsigned int>& indices, FbxMesh* meshNode, 
 	ControlPoint* skinningData)
@@ -389,7 +263,7 @@ void FileManager::GetVerticesAndIndices(Array<GOFile::VERTEX>& vertices, Array<u
 
 	bool shouldSwitchAxisSystem = false;
 	FbxAxisSystem leftAxis(FbxAxisSystem::DirectX);
-	FbxAxisSystem m_currentAxisSystem;
+	
 	if (m_currentAxisSystem.GetCoorSystem() != leftAxis.GetCoorSystem())
 	{
 		shouldSwitchAxisSystem = true;
@@ -727,6 +601,18 @@ void FileManager::GetVerticesAndIndices(Array<GOFile::VERTEX>& vertices, Array<u
 				vertex.biNormalX = (float)indexStruct.b.mData[0];
 				vertex.biNormalY = (float)indexStruct.b.mData[1];
 				vertex.biNormalZ = -(float)indexStruct.b.mData[2];
+				for (int j=0; j< m_blendshapes.size(); j++)
+				{
+					unsigned int cpIndex = positionIndices[i];
+					for (int k = 0;k <m_morphIndices[j].size(); k++)
+					{
+						if (cpIndex == m_morphIndices[j][k].targetIndex)
+						{
+							m_morphIndices[j][k].sourceIndex = indexCounter;
+							
+						}
+					}
+				}
 
 			}
 			else

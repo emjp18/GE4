@@ -96,7 +96,7 @@ public:
 private:
 	FbxManager* m_sdkManager = nullptr;
 	FbxScene* m_scene = nullptr;
-	
+	FbxAxisSystem m_currentAxisSystem;
 	Array<GOFile::MESH> m_meshes;
 	Array<Array<GOFile::VERTEX>> m_vertices;
 	Array<Array<unsigned int>> m_indices;
