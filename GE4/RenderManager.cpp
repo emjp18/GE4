@@ -9,3 +9,7 @@ RenderManager::RenderManager()
 void RenderManager::Startup()
 {
 }
+
+void RenderManager::ShutDown()
+{
+}

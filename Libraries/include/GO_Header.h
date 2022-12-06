@@ -18,11 +18,7 @@ namespace GOFile
 		DIR,
 		NONE
 	};
-	struct GAME_OBJECT
-	{
-		TYPE type = TYPE::NONE;
-		
-	};
+	
 	//Only one skeleton per file, and one source for all the blend shapes per file.
 	//Maximum materials per mesh is 10, maximum bones per Verttex is 4, Maximum name length is 100 the matrices is probably row major but not sure
 	//worst case transpose it.

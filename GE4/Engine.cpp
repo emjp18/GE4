@@ -6,12 +6,30 @@ int CUSTOM_CONTAINER::Map::cnt = 0;
 Engine::Engine(const HINSTANCE& hinstance)
 {
 	m_window = new Window(hinstance);
-
+	m_filemanager = new FileManager();
+	m_rendermanager = new RenderManager();
+	m_filemanager->Startup();
+	m_rendermanager->Startup();
 }
 
 Engine::~Engine()
 {
+	m_rendermanager->ShutDown();
+	m_filemanager->ShutDown();
+
+	RELEASE(m_rendermanager);
+	RELEASE(m_filemanager);
 	RELEASE(m_window);
+
+
+
+
+
+
+
+
+
+
 	//Renderer::getDebug()->ReportLiveDeviceObjects(D3D11_RLDO_FLAGS::D3D11_RLDO_DETAIL);
 }
 

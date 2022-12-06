@@ -8,31 +8,382 @@ FileManager::FileManager()
 
 void FileManager::Startup()
 {
+	m_sdkManager = FbxManager::Create();
+	FbxIOSettings* ios = FbxIOSettings::Create(m_sdkManager, IOSROOT);
+	m_sdkManager->SetIOSettings(ios);
+	
 }
 
-FbxScene* FileManager::GetScene()
+void FileManager::ImportFBX(const char* path)
 {
-	return nullptr;
+	FbxImporter* importer = FbxImporter::Create(m_sdkManager, "");
+
+	bool result;
+
+	result = importer->Initialize(path, -1, m_sdkManager->GetIOSettings());
+	assert(result);
+
+	m_scene = FbxScene::Create(m_sdkManager, "scene");
+	m_currentAxisSystem = m_scene->GetGlobalSettings().GetAxisSystem();
+	importer->Import(m_scene);
+	importer->Destroy();
+	GetRootNode();
 }
 
 void FileManager::GetRootNode()
 {
+	FbxNode* node = m_scene->GetRootNode();
+	if (node)
+	{
+		for (int i = 0; i < node->GetChildCount(); i++)
+		{
+			GetNodes(node->GetChild(i));
+		}
+	}
+	getMaterial();
 }
 
 void FileManager::Write()
 {
+	m_fileinfo.BlendShapesCount = m_blendshapes.size();
+	m_fileinfo.lightCount = m_lights.size();
+	m_fileinfo.materialCount = m_materials.size();
+	m_fileinfo.meshCount = m_meshes.size();
+	m_fileinfo.skeletonBoneCount = m_offsetMatrices.size();
+	m_fileinfo.skeletonKeyframeCount = 0;
+	if (m_keyframeMatrices.size() > 0)
+		m_fileinfo.skeletonKeyframeCount = m_keyframeMatrices[0].size();
+	
+	std::ofstream go;
+	go.open(m_path + ".GO", std::ios::out | std::ios::binary);
+	assert(go.is_open());
+	GOFile::TYPE fileinfo;
+	
+	go.write((const char*)&m_fileinfo, sizeof(GOFile::FILE_INFO));
+	
+	GOFile::TYPE type = GOFile::TYPE::MODEL;
+	for (int i = 0; i < m_fileinfo.meshCount; i++)
+	{
+		go.write((const char*)&type, sizeof(GOFile::TYPE));
+
+		go.write((const char*)&m_meshes[i], sizeof(GOFile::MESH));
+
+		for (int j = 0; j < m_vertices[i].size(); j++)
+		{
+			go.write((const char*)&m_vertices[i][j], sizeof(GOFile::VERTEX));
+		}
+
+		for (int j = 0; j < m_indices[i].size(); j++)
+		{
+			go.write((const char*)&m_indices[i][j], sizeof(unsigned int));
+		}
+
+
+	}
+	type = GOFile::TYPE::SKELETON;
+	go.write((const char*)&type, sizeof(GOFile::TYPE));
+	
+
+	for (unsigned short i = 0; i < m_fileinfo.skeletonBoneCount; i++)
+	{
+		go.write((const char*)&m_offsetMatrices[i], sizeof(GOFile::SkeletonOffset));
+	}
+	for (unsigned short i = 0; i < m_fileinfo.skeletonBoneCount; i++)
+	{
+		for (unsigned int j = 0; j < m_keyframeMatrices.size(); j++)
+		{
+			go.write((const char*)&m_keyframeMatrices[i][j], sizeof(GOFile::SkeletonKeyFrame));
+		}
+	}
+	type = GOFile::TYPE::BLEND_SHAPE;
+	go.write((const char*)&type, sizeof(GOFile::TYPE));
+	for (int m = 0; m < (int)m_blendshapes.size(); m++)
+	{
+		go.write((const char*)&m_blendshapes[m], sizeof(GOFile::MORPH_TARGET));
+		for (int v = 0; v < (int)m_morphVertices[m].size(); v++)
+		{
+			go.write((const char*)&m_morphVertices[m][v], sizeof(GOFile::MORPH_VERTEX));
+		}
+		for (int i = 0; i < (int)m_morphIndices[m].size(); i++)
+		{
+			go.write((const char*)&m_morphIndices[m][i], sizeof(GOFile::MORPH_INDEX));
+		}
+		if (m_morphKeyframes.size() > m)
+		{
+			for (int k = 0; k < (int)m_morphKeyframes[m].size(); k++)
+			{
+				go.write((const char*)&m_morphKeyframes[m][k], sizeof(GOFile::MORPH_KEYFRAME));
+			}
+		}
+
+	}
+	
+	type = GOFile::TYPE::LIGHT;
+	
+	go.write((const char*)&type, sizeof(GOFile::TYPE));
+
+	for (unsigned short i = 0; i < m_fileinfo.lightCount; i++)
+	{
+		go.write((const char*)&m_lights[i], sizeof(GOFile::LIGHT));
+	}
+
+	
+
+	type = GOFile::TYPE::MATERIAL;
+
+	go.write((const char*)&type, sizeof(GOFile::TYPE));
+
+	for (unsigned short i = 0; i < m_fileinfo.materialCount; i++)
+	{
+		go.write((const char*)&m_materials[i], sizeof(GOFile::MATERIAL));
+	}
+	
+	go.close();
+}
+
+FileManager::~FileManager()
+{
+	
+}
+
+void FileManager::ShutDown()
+{
+	m_sdkManager->Destroy();
+}
+
+void FileManager::GetMesh(fbxsdk::FbxNode* node, fbxsdk::FbxScene* scene)
+{
+	GOFile::MESH mesh;
+
+	FbxMesh* meshNode = (FbxMesh*)node->GetNodeAttribute();
+	const char* meshName = node->GetName();
+	strcpy_s(mesh.meshName, meshName);
+
+	for (int i = 0; i < node->GetMaterialCount(); i++)
+	{
+		if (i > 9)
+			break;
+		FbxSurfaceMaterial* mat = node->GetMaterial(i);
+
+		const char* matName = mat->GetName();
+
+		strcpy_s(mesh.materialName[i], matName);
+		
+	}
+	
+
+
+
+	FbxGeometry* geometry = node->GetGeometry();
+	ControlPoint* skinningData = nullptr;
+	if (geometry->GetDeformerCount(FbxDeformer::eSkin) > 0)
+	{
+		FbxSkin* skin = (FbxSkin*)geometry->GetDeformer(0, FbxDeformer::eSkin);
+		skinningData = GetSkinningInformation(skin, mesh);
+	}
+	if (geometry->GetDeformerCount(FbxDeformer::eBlendShape) > 0)
+	{
+		GetBlendShapes(geometry, scene,meshNode, mesh);
+	}
+	Array<GOFile::VERTEX> vertices;
+	Array<unsigned int> indices;
+	GetVerticesAndIndices(vertices, indices, meshNode,skinningData);
+	mesh.indexCount = (unsigned int)indices.size();
+	mesh.vertexCount = (unsigned int)vertices.size();
+	m_meshes.push_back(mesh);
+	m_vertices.push_back(vertices);
+	m_indices.push_back(indices);
+
 }
 
 void FileManager::GetNodes(FbxNode* node)
 {
+	if (node->GetNodeAttribute())
+	{
+		FbxNodeAttribute::EType attributeType = (node->GetNodeAttribute()->GetAttributeType());
+
+		switch (attributeType)
+		{
+		case FbxNodeAttribute::eLight:
+			getLight(node);
+			break;
+		case FbxNodeAttribute::eMesh:
+
+			GetMesh(node, m_scene);
+			break;
+
+		default:
+			break;
+		}
+
+	}
+	for (int i = 0; i < node->GetChildCount(); i++)
+	{
+		GetNodes(node->GetChild(i));
+	}
 }
 
 void FileManager::getMaterial()
 {
+	int matCount = m_scene->GetMaterialCount();
+	GOFile::MATERIAL mat;
+	
+
+	for (int i = 0; i < matCount; i++)
+	{
+		FbxSurfaceMaterial* material = m_scene->GetMaterial(i);
+
+		FbxClassId type = material->GetClassId();
+
+		const char* name = material->GetName();
+
+		strcpy_s(m_materials[i].name, name);
+
+		if (type.Is(FbxSurfaceLambert::ClassId))
+		{
+			FbxSurfaceLambert* lambert = (FbxSurfaceLambert*)material;
+
+
+
+			FbxDouble3 ka = lambert->Ambient;
+			FbxDouble3 kd = lambert->Diffuse;
+
+
+			mat.ka[0] = (float)ka[0];
+			mat.ka[1] = (float)ka[1];
+			mat.ka[2] = (float)ka[2];
+
+			mat.kd[0] = (float)kd[0];
+			mat.kd[1] = (float)kd[1];
+			mat.kd[2] = (float)kd[2];
+
+
+
+		}
+		if (type.Is(FbxSurfacePhong::ClassId))
+		{
+			FbxSurfacePhong* phong = (FbxSurfacePhong*)material;
+
+			FbxDouble3 ka = phong->Ambient;
+			FbxDouble3 kd = phong->Diffuse;
+			FbxDouble3 ks = phong->Specular;
+			FbxDouble exponent = phong->SpecularFactor;
+
+
+
+			mat.ka[0] = (float)ka[0];
+			mat.ka[1] = (float)ka[1];
+			mat.ka[2] = (float)ka[2];
+
+			mat.kd[0] = (float)kd[0];
+			mat.kd[1] = (float)kd[1];
+			mat.kd[2] = (float)kd[2];
+
+			mat.ks[0] = (float)ks[0];
+			mat.ks[1] = (float)ks[1];
+			mat.ks[2] = (float)ks[2];
+
+			mat.ks[3] = (float)exponent;
+
+
+		}
+		m_materials.push_back(mat);
+	}
 }
 
 void FileManager::getLight(FbxNode* lightNode)
 {
+
+	FbxVector4 forward;
+	bool shouldSwitchAxisSystem = false;
+	FbxAxisSystem leftAxis(FbxAxisSystem::DirectX);
+
+	if (m_scene->GetGlobalSettings().GetAxisSystem().GetCoorSystem() != leftAxis.GetCoorSystem())
+	{
+		shouldSwitchAxisSystem = true;
+		forward.Set(0, 0, -1, 0);
+	}
+	bool global = true;
+
+	GOFile::LIGHT lightStruct;
+
+	FbxLight* light = nullptr;
+
+	light = (FbxLight*)lightNode->GetNodeAttribute();
+
+
+
+	//
+	FbxLight::EType lightType = light->LightType.Get();
+
+	if (lightType == FbxLight::EType::ePoint)
+	{
+		lightStruct.type = GOFile::LIGHT_TYPE::POINT;
+		FbxDouble3 t_color = light->Color.Get();
+		lightStruct.r = (float)t_color[0];
+		lightStruct.g = (float)t_color[1];
+		lightStruct.b = (float)t_color[2];
+
+		FbxDouble t_intensity = light->Intensity.Get();
+		lightStruct.intensity = (float)t_intensity / 100.0f;
+
+		FbxDouble3 t_pos = lightNode->LclTranslation.Get();
+
+
+		if (shouldSwitchAxisSystem)
+		{
+			lightStruct.posX = (float)t_pos.mData[0];
+			lightStruct.posY = (float)t_pos.mData[1];
+			lightStruct.posZ = -(float)t_pos.mData[2];
+		}
+		else
+		{
+			lightStruct.posX = (float)t_pos.mData[0];
+			lightStruct.posY = (float)t_pos.mData[1];
+			lightStruct.posZ = (float)t_pos.mData[2];
+		}
+
+
+		m_lights.push_back(lightStruct);
+		return;
+	}
+	else if (lightType == FbxLight::EType::eDirectional)
+	{
+		lightStruct.type = GOFile::LIGHT_TYPE::DIR;
+		auto eulerRot = lightNode->LclRotation.Get();
+		FbxDouble3 t_color = light->Color.Get();
+		lightStruct.r = (float)t_color[0];
+		lightStruct.g = (float)t_color[1];
+		lightStruct.b = (float)t_color[2];
+
+		FbxDouble t_intensity = light->Intensity.Get();
+		lightStruct.intensity = (float)t_intensity / 100.0f;
+
+		FbxAMatrix rotM;
+		rotM.SetIdentity();
+		rotM.SetR({ eulerRot }, FbxEuler::EOrder::eOrderXYZ);
+
+		forward = rotM.MultT(forward);
+
+		if (shouldSwitchAxisSystem)
+		{
+			lightStruct.dirX = (float)forward.mData[0];
+			lightStruct.dirY = (float)forward.mData[1];
+			lightStruct.dirZ = -(float)forward.mData[2];
+		}
+		else
+		{
+			lightStruct.dirX = (float)forward.mData[0];
+			lightStruct.dirY = (float)forward.mData[1];
+			lightStruct.dirZ = (float)forward.mData[2];
+		}
+
+
+	}
+
+
+
+		m_lights.push_back(lightStruct);
 }
 
 
@@ -220,6 +571,147 @@ void FileManager::GetBlendShapes(FbxGeometry* geometry, fbxsdk::FbxScene* scene,
 		}
 		
 
+	}
+}
+void FileManager::GetSkeleton(fbxsdk::FbxNode* node, fbxsdk::FbxScene* scene)
+{
+	FbxGeometry* geometry = node->GetGeometry();
+	FbxSkin* skin = (FbxSkin*)geometry->GetDeformer(0, FbxDeformer::eSkin);
+
+	if (!skin)
+	{
+		return;
+	}
+	bool shouldSwitchAxisSystem = false;
+	FbxAxisSystem leftAxis(FbxAxisSystem::DirectX);
+
+	if (m_currentAxisSystem.GetCoorSystem() != leftAxis.GetCoorSystem())
+	{
+		shouldSwitchAxisSystem = true;
+	}
+	FbxTime currTime;
+	FbxAnimStack* stack = scene->GetSrcObject<FbxAnimStack>(0);
+	FbxTakeInfo* take = scene->GetTakeInfo(stack->GetName());
+	FbxTime timeInfo = take->mLocalTimeSpan.GetDuration();
+	FbxTime start = take->mLocalTimeSpan.GetStart();
+	FbxTime stop = take->mLocalTimeSpan.GetStop();
+	scene->GetGlobalSettings().SetTimeMode(FbxTime::ConvertFrameRateToTimeMode((double)m_fps));
+	auto timeMode = scene->GetGlobalSettings().GetTimeMode();
+	int boneCount = skin->GetClusterCount();
+	m_fileinfo.animationLenght = (float)timeInfo.GetFrameCountPrecise();
+	
+	for (int bone = 0; bone < boneCount; bone++)
+	{
+		FbxString name = skin->GetCluster(bone)->GetLink()->GetName();
+		FbxNode* boneNode = skin->GetCluster(bone)->GetLink();
+		FbxString parentName = skin->GetCluster(bone)->GetLink()->GetParent()->GetName();
+		FbxAMatrix offsetM;
+		skin->GetCluster(bone)->GetTransformLinkMatrix(offsetM);
+		offsetM = offsetM.Inverse();
+		GOFile::SkeletonOffset offset;
+		if (shouldSwitchAxisSystem)
+		{
+			FbxQuaternion offsetQ = offsetM.GetQ();
+			FbxVector4 offsetT = offsetM.GetT();
+			FbxVector4 offsetS = offsetM.GetS();
+			
+			offsetT.mData[2] = -offsetT.mData[2];
+			offsetQ.mData[0] = -offsetQ.mData[0];
+			offsetQ.mData[1] = -offsetQ.mData[1];
+			FbxAMatrix switchedOffsetM;
+			switchedOffsetM.SetS(offsetS);
+			switchedOffsetM.SetQ(offsetQ);
+			switchedOffsetM.SetT(offsetT);
+		
+			offset.m[0][0] = (float)switchedOffsetM.Get(0, 0);
+			offset.m[0][1] = (float)switchedOffsetM.Get(0, 1);
+			offset.m[0][2] = (float)switchedOffsetM.Get(0, 2);
+			offset.m[0][3] = (float)switchedOffsetM.Get(0, 3);
+			offset.m[1][0] = (float)switchedOffsetM.Get(1, 0);
+			offset.m[1][1] = (float)switchedOffsetM.Get(1, 1);
+			offset.m[1][2] = (float)switchedOffsetM.Get(1, 2);
+			offset.m[1][3] = (float)switchedOffsetM.Get(1, 3);
+			offset.m[2][0] = (float)switchedOffsetM.Get(2, 0);
+			offset.m[2][1] = (float)switchedOffsetM.Get(2, 1);
+			offset.m[2][2] = (float)switchedOffsetM.Get(2, 2);
+			offset.m[2][3] = (float)switchedOffsetM.Get(2, 3);
+			offset.m[3][0] = (float)switchedOffsetM.Get(3, 0);
+			offset.m[3][1] = (float)switchedOffsetM.Get(3, 1);
+			offset.m[3][2] = (float)switchedOffsetM.Get(3, 2);
+			offset.m[3][3] = (float)switchedOffsetM.Get(3, 3);
+		}
+		else
+		{
+			offset.m[0][0] = (float)offsetM.Get(0, 0);
+			offset.m[0][1] = (float)offsetM.Get(0, 1);
+			offset.m[0][2] = (float)offsetM.Get(0, 2);
+			offset.m[0][3] = (float)offsetM.Get(0, 3);
+			offset.m[1][0] = (float)offsetM.Get(1, 0);
+			offset.m[1][1] = (float)offsetM.Get(1, 1);
+			offset.m[1][2] = (float)offsetM.Get(1, 2);
+			offset.m[1][3] = (float)offsetM.Get(1, 3);
+			offset.m[2][0] = (float)offsetM.Get(2, 0);
+			offset.m[2][1] = (float)offsetM.Get(2, 1);
+			offset.m[2][2] = (float)offsetM.Get(2, 2);
+			offset.m[2][3] = (float)offsetM.Get(2, 3);
+			offset.m[3][0] = (float)offsetM.Get(3, 0);
+			offset.m[3][1] = (float)offsetM.Get(3, 1);
+			offset.m[3][2] = (float)offsetM.Get(3, 2);
+			offset.m[3][3] = (float)offsetM.Get(3, 3);
+		}
+
+		
+
+		strcpy_s(offset.boneName, name);
+		strcpy_s(offset.boneParentName, parentName);
+		offset.boneChildCount = (unsigned short)skin->GetCluster(bone)->GetLink()->GetChildCount();
+		offset.boneIndex = (unsigned short)bone;
+		m_offsetMatrices.push_back(offset);
+		Array<GOFile::SkeletonKeyFrame> skeletonkeyframearr;
+		for (FbxLongLong frame = start.GetFrameCount(timeMode); frame <= stop.GetFrameCount(timeMode); frame++)
+		{
+			currTime.SetFrame(frame, timeMode);
+			FbxAMatrix localTransform = boneNode->EvaluateLocalTransform(currTime);
+			FbxVector4 s = localTransform.GetS();
+			FbxQuaternion r = localTransform.GetQ();
+			FbxVector4 t = localTransform.GetT();
+			GOFile::SkeletonKeyFrame skeletonKeyFrame;
+			//r.Normalize();
+			if (shouldSwitchAxisSystem)
+			{
+				skeletonKeyFrame.s[0] = (float)s.mData[0];
+				skeletonKeyFrame.s[1] = (float)s.mData[1];
+				skeletonKeyFrame.s[2] = (float)s.mData[2];
+				skeletonKeyFrame.s[3] = (float)s.mData[3];
+				skeletonKeyFrame.r[0] = -(float)r.mData[0];
+				skeletonKeyFrame.r[1] = -(float)r.mData[1];
+				skeletonKeyFrame.r[2] = (float)r.mData[2];
+				skeletonKeyFrame.r[3] = (float)r.mData[3];
+				skeletonKeyFrame.t[0] = (float)t.mData[0];
+				skeletonKeyFrame.t[1] = (float)t.mData[1];
+				skeletonKeyFrame.t[2] = -(float)t.mData[2];
+				skeletonKeyFrame.t[3] = (float)t.mData[3];
+			}
+			else
+			{
+				skeletonKeyFrame.s[0] = (float)s.mData[0];
+				skeletonKeyFrame.s[1] = (float)s.mData[1];
+				skeletonKeyFrame.s[2] = (float)s.mData[2];
+				skeletonKeyFrame.s[3] = (float)s.mData[3];
+				skeletonKeyFrame.r[0] = (float)r.mData[0];
+				skeletonKeyFrame.r[1] = (float)r.mData[1];
+				skeletonKeyFrame.r[2] = (float)r.mData[2];
+				skeletonKeyFrame.r[3] = (float)r.mData[3];
+				skeletonKeyFrame.t[0] = (float)t.mData[0];
+				skeletonKeyFrame.t[1] = (float)t.mData[1];
+				skeletonKeyFrame.t[2] = (float)t.mData[2];
+				skeletonKeyFrame.t[3] = (float)t.mData[3];
+			}
+			skeletonKeyFrame.boneIndex = (unsigned short)bone;
+			skeletonkeyframearr.push_back(skeletonKeyFrame);
+			
+		}
+		m_keyframeMatrices.push_back(skeletonkeyframearr);
 	}
 }
 //I need to double check this is an accurate way of getting vertex data.

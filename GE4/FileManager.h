@@ -89,10 +89,11 @@ public:
     }
 	//Always left handed and always global space
 	//Only one animation per file.
-	FbxScene* GetScene();
-	void GetRootNode();
-	void Write();
+	void ImportFBX(const char* path);
 	
+	void Write();
+	~FileManager();
+	void ShutDown();
 private:
 	FbxManager* m_sdkManager = nullptr;
 	FbxScene* m_scene = nullptr;
@@ -100,16 +101,18 @@ private:
 	Array<GOFile::MESH> m_meshes;
 	Array<Array<GOFile::VERTEX>> m_vertices;
 	Array<Array<unsigned int>> m_indices;
-	Array<GOFile::VERTEX> m_vertexArray;
-	Array<unsigned int> m_indiceArray;
+	void GetNodes(FbxNode* node);
 	Array<GOFile::MORPH_TARGET> m_blendshapes;
 	Array<Array<GOFile::MORPH_VERTEX>> m_morphVertices;
 	Array<Array<GOFile::MORPH_INDEX>> m_morphIndices;
 	Array<Array<GOFile::MORPH_KEYFRAME>> m_morphKeyframes;
 	Array<GOFile::MATERIAL> m_materials;
 	Array<GOFile::LIGHT> m_lights;
+	Array<GOFile::SkeletonOffset> m_offsetMatrices;
+	Array<Array<GOFile::SkeletonKeyFrame>> m_keyframeMatrices;
 	float m_fps = 30.0f;
 	GOFile::FILE_INFO m_fileinfo;
+	void GetMesh(fbxsdk::FbxNode* node, fbxsdk::FbxScene* scene);
 	void GetNodes(FbxNode* node);
 	void getMaterial();
 	void getLight(FbxNode* lightNode);
@@ -118,6 +121,10 @@ private:
 	void GetBlendShapes(FbxGeometry* geometry, fbxsdk::FbxScene* scene, FbxMesh* meshNode, GOFile::MESH& mesh);
 	template <typename T>
 	void SortIndices(Array<T>& arr, Array<unsigned int>& inarr, T value, int& c);
+	void GetSkeleton(fbxsdk::FbxNode* node, fbxsdk::FbxScene* scene);
+	//The vertices must be after skeleton and blend shapes
+	string m_path = "../Content";
+	void GetRootNode();
 };
 #endif
 
