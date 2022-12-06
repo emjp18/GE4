@@ -11,11 +11,13 @@ void FileManager::Startup()
 	m_sdkManager = FbxManager::Create();
 	FbxIOSettings* ios = FbxIOSettings::Create(m_sdkManager, IOSROOT);
 	m_sdkManager->SetIOSettings(ios);
-	m_fileinfo.fps = m_fps;
+	m_gofile.GetSetFileInfo().fps = m_fps;
 }
 
 void FileManager::ImportFBX(const char* path)
 {
+	m_gofile.Clear();
+	
 	FbxImporter* importer = FbxImporter::Create(m_sdkManager, "");
 
 	bool result;
@@ -43,64 +45,41 @@ void FileManager::GetRootNode()
 	getMaterial();
 }
 
-void FileManager::Clear()
-{
-	m_meshes.clear();
-	m_vertices.clear();
-	m_indices.clear();
-	m_blendshapes.clear();
-	m_morphVertices.clear();
-	m_morphIndices.clear();
-	m_morphKeyframes.clear();
-	m_materials.clear();
-	m_lights.clear();
-	m_offsetMatrices.clear();
-	m_keyframeMatrices.clear();
-	m_fileinfo.animationLenght = 0;
-	m_fileinfo.BlendShapesCount = 0;
-	m_fileinfo.fps = 0;
-	m_fileinfo.lightCount = 0;
-	m_fileinfo.materialCount = 0;
-	m_fileinfo.meshCount = 0;
-	m_fileinfo.skeletonBoneCount = 0;
-	m_fileinfo.skeletonKeyframeCount = 0;
-	
-	
-}
+
 
 void FileManager::Write()
 {
-	m_fileinfo.BlendShapesCount = (unsigned short)m_blendshapes.size();
-	m_fileinfo.lightCount = (unsigned short)m_lights.size();
-	m_fileinfo.materialCount = (unsigned short)m_materials.size();
-	m_fileinfo.meshCount = (unsigned short)m_meshes.size();
-	m_fileinfo.skeletonBoneCount = (unsigned short)m_offsetMatrices.size();
-	m_fileinfo.skeletonKeyframeCount = 0;
-	if (m_keyframeMatrices.size() > 0)
-		m_fileinfo.skeletonKeyframeCount = (unsigned short)m_keyframeMatrices[0].size();
+	m_gofile.GetSetFileInfo().BlendShapesCount = (unsigned short)m_gofile.GetSetBlendshapes().size();
+	m_gofile.GetSetFileInfo().lightCount = (unsigned short)m_gofile.GetSetLights().size();
+	m_gofile.GetSetFileInfo().materialCount = (unsigned short)m_gofile.GetSetMaterials().size();
+	m_gofile.GetSetFileInfo().meshCount = (unsigned short)m_gofile.GetSetMeshes().size();
+	m_gofile.GetSetFileInfo().skeletonBoneCount = (unsigned short)m_gofile.GetSetSkeletonOffsetMatrices().size();
+	m_gofile.GetSetFileInfo().skeletonKeyframeCount = 0;
+	if (m_gofile.GetSetSkeletonKeyFrameMatrices().size() > 0)
+		m_gofile.GetSetFileInfo().skeletonKeyframeCount = (unsigned short)m_gofile.GetSetSkeletonKeyFrameMatrices()[0].size();
 	
 	std::ofstream go;
 	go.open(m_path + ".GO", std::ios::out | std::ios::binary);
 	assert(go.is_open());
 	
 	
-	go.write((const char*)&m_fileinfo, sizeof(GOFile::FILE_INFO));
+	go.write((const char*)&m_gofile.GetSetFileInfo(), sizeof(GOFile::FILE_INFO));
 	
 	GOFile::TYPE type = GOFile::TYPE::MODEL;
-	for (int i = 0; i < m_fileinfo.meshCount; i++)
+	for (int i = 0; i < m_gofile.GetSetFileInfo().meshCount; i++)
 	{
 		go.write((const char*)&type, sizeof(GOFile::TYPE));
 
-		go.write((const char*)&m_meshes[i], sizeof(GOFile::MESH));
+		go.write((const char*)&m_gofile.GetSetMeshes()[i], sizeof(GOFile::MESH));
 
-		for (int j = 0; j < m_vertices[i].size(); j++)
+		for (int j = 0; j < m_gofile.GetSetVertices()[i].size(); j++)
 		{
-			go.write((const char*)&m_vertices[i][j], sizeof(GOFile::VERTEX));
+			go.write((const char*)&m_gofile.GetSetVertices()[i][j], sizeof(GOFile::VERTEX));
 		}
 
-		for (int j = 0; j < m_indices[i].size(); j++)
+		for (int j = 0; j < m_gofile.GetSetIndicies()[i].size(); j++)
 		{
-			go.write((const char*)&m_indices[i][j], sizeof(unsigned int));
+			go.write((const char*)&m_gofile.GetSetIndicies()[i][j], sizeof(unsigned int));
 		}
 
 
@@ -109,35 +88,35 @@ void FileManager::Write()
 	go.write((const char*)&type, sizeof(GOFile::TYPE));
 	
 
-	for (unsigned short i = 0; i < m_fileinfo.skeletonBoneCount; i++)
+	for (unsigned short i = 0; i < m_gofile.GetSetFileInfo().skeletonBoneCount; i++)
 	{
-		go.write((const char*)&m_offsetMatrices[i], sizeof(GOFile::SkeletonOffset));
+		go.write((const char*)&m_gofile.GetSetSkeletonOffsetMatrices()[i], sizeof(GOFile::SkeletonOffset));
 	}
-	for (unsigned short i = 0; i < m_fileinfo.skeletonBoneCount; i++)
+	for (unsigned short i = 0; i < m_gofile.GetSetFileInfo().skeletonBoneCount; i++)
 	{
-		for (unsigned int j = 0; j < m_keyframeMatrices.size(); j++)
+		for (unsigned int j = 0; j < m_gofile.GetSetSkeletonKeyFrameMatrices().size(); j++)
 		{
-			go.write((const char*)&m_keyframeMatrices[i][j], sizeof(GOFile::SkeletonKeyFrame));
+			go.write((const char*)&m_gofile.GetSetSkeletonKeyFrameMatrices()[i][j], sizeof(GOFile::SkeletonKeyFrame));
 		}
 	}
 	type = GOFile::TYPE::BLEND_SHAPE;
 	go.write((const char*)&type, sizeof(GOFile::TYPE));
-	for (int m = 0; m < (int)m_blendshapes.size(); m++)
+	for (int m = 0; m < (int)m_gofile.GetSetBlendshapes().size(); m++)
 	{
-		go.write((const char*)&m_blendshapes[m], sizeof(GOFile::MORPH_TARGET));
-		for (int v = 0; v < (int)m_morphVertices[m].size(); v++)
+		go.write((const char*)&m_gofile.GetSetBlendshapes()[m], sizeof(GOFile::MORPH_TARGET));
+		for (int v = 0; v < (int)m_gofile.GetSetMorphVertices()[m].size(); v++)
 		{
-			go.write((const char*)&m_morphVertices[m][v], sizeof(GOFile::MORPH_VERTEX));
+			go.write((const char*)&m_gofile.GetSetMorphVertices()[m][v], sizeof(GOFile::MORPH_VERTEX));
 		}
-		for (int i = 0; i < (int)m_morphIndices[m].size(); i++)
+		for (int i = 0; i < (int)m_gofile.GetSetMorphIndicies()[m].size(); i++)
 		{
-			go.write((const char*)&m_morphIndices[m][i], sizeof(GOFile::MORPH_INDEX));
+			go.write((const char*)&m_gofile.GetSetMorphIndicies()[m][i], sizeof(GOFile::MORPH_INDEX));
 		}
-		if (m_morphKeyframes.size() > m)
+		if (m_gofile.GetSetMorphKeyFrames().size() > m)
 		{
-			for (int k = 0; k < (int)m_morphKeyframes[m].size(); k++)
+			for (int k = 0; k < (int)m_gofile.GetSetMorphKeyFrames()[m].size(); k++)
 			{
-				go.write((const char*)&m_morphKeyframes[m][k], sizeof(GOFile::MORPH_KEYFRAME));
+				go.write((const char*)&m_gofile.GetSetMorphKeyFrames()[m][k], sizeof(GOFile::MORPH_KEYFRAME));
 			}
 		}
 
@@ -147,9 +126,9 @@ void FileManager::Write()
 	
 	go.write((const char*)&type, sizeof(GOFile::TYPE));
 
-	for (unsigned short i = 0; i < m_fileinfo.lightCount; i++)
+	for (unsigned short i = 0; i < m_gofile.GetSetFileInfo().lightCount; i++)
 	{
-		go.write((const char*)&m_lights[i], sizeof(GOFile::LIGHT));
+		go.write((const char*)&m_gofile.GetSetLights()[i], sizeof(GOFile::LIGHT));
 	}
 
 	
@@ -158,9 +137,9 @@ void FileManager::Write()
 
 	go.write((const char*)&type, sizeof(GOFile::TYPE));
 
-	for (unsigned short i = 0; i < m_fileinfo.materialCount; i++)
+	for (unsigned short i = 0; i < m_gofile.GetSetFileInfo().materialCount; i++)
 	{
-		go.write((const char*)&m_materials[i], sizeof(GOFile::MATERIAL));
+		go.write((const char*)&m_gofile.GetSetMaterials()[i], sizeof(GOFile::MATERIAL));
 	}
 	
 	go.close();
@@ -210,14 +189,14 @@ void FileManager::GetMesh(fbxsdk::FbxNode* node, fbxsdk::FbxScene* scene)
 	{
 		GetBlendShapes(geometry, scene,meshNode, mesh);
 	}
-	Array<GOFile::VERTEX> vertices;
-	Array<unsigned int> indices;
-	GetVerticesAndIndices(vertices, indices, meshNode,skinningData);
-	mesh.indexCount = (unsigned int)indices.size();
-	mesh.vertexCount = (unsigned int)vertices.size();
-	m_meshes.push_back(mesh);
-	m_vertices.push_back(vertices);
-	m_indices.push_back(indices);
+	m_vertices.clear();
+	m_indices.clear();
+	GetVerticesAndIndices(m_vertices, m_indices, meshNode,skinningData);
+	mesh.indexCount = (unsigned int)m_indices.size();
+	mesh.vertexCount = (unsigned int)m_vertices.size();
+	m_gofile.GetSetMeshes().push_back(mesh);
+	m_gofile.GetSetVertices().push_back(m_vertices);
+	m_gofile.GetSetIndicies().push_back(m_indices);
 
 }
 
@@ -262,7 +241,7 @@ void FileManager::getMaterial()
 
 		const char* name = material->GetName();
 
-		strcpy_s(m_materials[i].name, name);
+		strcpy_s(m_gofile.GetSetMaterials()[i].name, name);
 
 		if (type.Is(FbxSurfaceLambert::ClassId))
 		{
@@ -312,7 +291,7 @@ void FileManager::getMaterial()
 
 
 		}
-		m_materials.push_back(mat);
+		m_gofile.GetSetMaterials().push_back(mat);
 	}
 }
 
@@ -369,7 +348,7 @@ void FileManager::getLight(FbxNode* lightNode)
 		}
 
 
-		m_lights.push_back(lightStruct);
+		m_gofile.GetSetLights().push_back(lightStruct);
 		return;
 	}
 	else if (lightType == FbxLight::EType::eDirectional)
@@ -408,7 +387,7 @@ void FileManager::getLight(FbxNode* lightNode)
 
 
 
-		m_lights.push_back(lightStruct);
+	m_gofile.GetSetLights().push_back(lightStruct);
 }
 
 
@@ -486,34 +465,37 @@ void FileManager::GetBlendShapes(FbxGeometry* geometry, fbxsdk::FbxScene* scene,
 
 	int blendShapeDeformerCount = geometry->GetDeformerCount(FbxDeformer::eBlendShape);
 	FbxAnimStack* stack = scene->GetSrcObject<FbxAnimStack>(0);
-	FbxTakeInfo* take = scene->GetTakeInfo(stack->GetName());
+	int layerCount = 0;
+	if (stack)
+	{
+		FbxTakeInfo* take = scene->GetTakeInfo(stack->GetName());
 
-	FbxTime timeInfo = take->mLocalTimeSpan.GetDuration();
+		FbxTime timeInfo = take->mLocalTimeSpan.GetDuration();
+
+		m_gofile.GetSetFileInfo().animationLenght = (float)timeInfo.GetFrameCountPrecise();
+		layerCount = stack->GetMemberCount<FbxAnimLayer>();
+	}
 	
-	m_fileinfo.animationLenght = (float)timeInfo.GetFrameCountPrecise();
-	int layerCount = stack->GetMemberCount<FbxAnimLayer>();
 	for (int bsd = 0; bsd < blendShapeDeformerCount; bsd++)
 	{
+		
+
 		FbxBlendShape* blendShape = (FbxBlendShape*)geometry->GetDeformer(bsd, FbxDeformer::eBlendShape);
 		int blendShapeCount = blendShape->GetBlendShapeChannelCount();
-		
-		for (int layer = 0; layer < layerCount; layer++)
+		for (int bs = 0; bs < blendShapeCount; bs++)
 		{
-			FbxAnimLayer* animLayer = stack->GetMember<FbxAnimLayer>(layer);
-
-			for (int bs = 0; bs < blendShapeCount; bs++)
+			GOFile::MORPH_TARGET mt;
+			FbxBlendShapeChannel* channel = blendShape->GetBlendShapeChannel(bs);
+			for (int layer = 0; layer < layerCount; layer++)
 			{
-				GOFile::MORPH_TARGET mt;
-				FbxBlendShapeChannel* channel = blendShape->GetBlendShapeChannel(bs);
-				
-				strcpy_s(mt.sourceName, mesh.meshName);
-				strcpy_s(mt.name, channel->GetName());
+				FbxAnimLayer* animLayer = stack->GetMember<FbxAnimLayer>(layer);
+
 				FbxAnimCurve* animCurve = geometry->GetShapeChannel(bsd, bs, animLayer);
 				Array<GOFile::MORPH_KEYFRAME> keyframes;
 				if (animCurve)
 				{
 					int keyCount = animCurve->KeyGetCount();
-					
+
 					for (int key = 0; key < keyCount; key++)
 					{
 						GOFile::MORPH_KEYFRAME kf;
@@ -521,45 +503,60 @@ void FileManager::GetBlendShapes(FbxGeometry* geometry, fbxsdk::FbxScene* scene,
 						kf.timeStamp = (float)animCurve->KeyGetTime(key).GetFrameCountPrecise();
 						keyframes.push_back(kf);
 					}
-					m_morphKeyframes.push_back(keyframes);
+					m_gofile.GetSetMorphKeyFrames().push_back(keyframes);
 					mt.morphKeyframeCount = (unsigned int)keyCount;
 				}
-				FbxShape* shape = channel->GetTargetShape(0); //only one target per shape.
-				
 
-				FbxLayerElementArrayTemplate<FbxVector4>* narr = nullptr;
-				bool normalBool = shape->GetNormals(&narr);
-				FbxLayerElementArrayTemplate<FbxVector4>* tarr = nullptr;
-				bool tangentBool = shape->GetTangents(&tarr);
-				FbxLayerElementArrayTemplate<FbxVector4>* barr = nullptr;
-				bool biNormalsBool = shape->GetBinormals(&barr);
-				FbxLayerElementArrayTemplate<int>* nInd = nullptr;
-				bool normalIndiceseBool = shape->GetNormalsIndices(&nInd);
-				FbxLayerElementArrayTemplate<int>* tInd = nullptr;
-				bool tangentIndiceseBool = shape->GetTangentsIndices(&tInd);
-				FbxLayerElementArrayTemplate<int>* bInd = nullptr;
-				bool biNormalIndiceseBool = shape->GetBinormalsIndices(&bInd);
-				int* posIndices = shape->GetControlPointIndices();
-				FbxVector4* cp = shape->GetControlPoints();
+			}
+			strcpy_s(mt.sourceName, mesh.meshName);
+			strcpy_s(mt.name, channel->GetName());
+			
+			FbxShape* shape = channel->GetTargetShape(0); //only one target per shape.
 
-				
-				Array<GOFile::MORPH_VERTEX> mvertices;
-				for (int j = 0; j < shape->GetControlPointIndicesCount(); j++)
+
+			FbxLayerElementArrayTemplate<FbxVector4>* narr = nullptr;
+			bool normalBool = shape->GetNormals(&narr);
+			FbxLayerElementArrayTemplate<FbxVector4>* tarr = nullptr;
+			bool tangentBool = shape->GetTangents(&tarr);
+			FbxLayerElementArrayTemplate<FbxVector4>* barr = nullptr;
+			bool biNormalsBool = shape->GetBinormals(&barr);
+			FbxLayerElementArrayTemplate<int>* nInd = nullptr;
+			bool normalIndiceseBool = shape->GetNormalsIndices(&nInd);
+			FbxLayerElementArrayTemplate<int>* tInd = nullptr;
+			bool tangentIndiceseBool = shape->GetTangentsIndices(&tInd);
+			FbxLayerElementArrayTemplate<int>* bInd = nullptr;
+			bool biNormalIndiceseBool = shape->GetBinormalsIndices(&bInd);
+			int* posIndices = shape->GetControlPointIndices();
+			FbxVector4* cp = shape->GetControlPoints();
+
+			
+			m_mvertices.clear();
+			for (int j = 0; j < shape->GetControlPointIndicesCount(); j++)
+			{
+				GOFile::MORPH_VERTEX mvertex;
+				GOFile::MORPH_INDEX mindex;
+				mvertex.posX = (float)cp[posIndices[j]].mData[0];
+				mvertex.posY = (float)cp[posIndices[j]].mData[1];
+				mvertex.posZ = (float)cp[posIndices[j]].mData[2];
+				mindex.targetIndex = posIndices[j];
+				if (nInd)
 				{
-					GOFile::MORPH_VERTEX mvertex;
-					GOFile::MORPH_INDEX mindex;
-					mvertex.posX =(float)cp[posIndices[j]].mData[0];
-					mvertex.posY =(float)cp[posIndices[j]].mData[1];
-					mvertex.posZ =(float)cp[posIndices[j]].mData[2];
-					mindex.targetIndex = posIndices[j];
-
 					if (normalBool && narr && nInd->GetCount() == shape->GetControlPointIndicesCount())
 					{
 						mvertex.normalX = (float)narr->GetAt(nInd->GetAt(j)).mData[0];
 						mvertex.normalY = (float)narr->GetAt(nInd->GetAt(j)).mData[1];
 						mvertex.normalZ = (float)narr->GetAt(nInd->GetAt(j)).mData[2];
-						
+
 					}
+				}
+				else if (normalBool && narr && narr->GetCount() == shape->GetControlPointsCount())
+				{
+					mvertex.normalX = (float)narr->GetAt(nInd->GetAt(posIndices[j])).mData[0];
+					mvertex.normalY = (float)narr->GetAt(nInd->GetAt(posIndices[j])).mData[1];
+					mvertex.normalZ = (float)narr->GetAt(nInd->GetAt(posIndices[j])).mData[2];
+				}
+				if (tInd)
+				{
 					if (tangentBool && tarr && tInd->GetCount() == shape->GetControlPointIndicesCount())
 					{
 						mvertex.tangentX = (float)tarr->GetAt(tInd->GetAt(j)).mData[0];
@@ -567,6 +564,9 @@ void FileManager::GetBlendShapes(FbxGeometry* geometry, fbxsdk::FbxScene* scene,
 						mvertex.tangentZ = (float)tarr->GetAt(tInd->GetAt(j)).mData[2];
 
 					}
+				}
+				if (bInd)
+				{
 					if (biNormalsBool && barr && bInd->GetCount() == shape->GetControlPointIndicesCount())
 					{
 						mvertex.biNormalX = (float)barr->GetAt(bInd->GetAt(j)).mData[0];
@@ -574,26 +574,27 @@ void FileManager::GetBlendShapes(FbxGeometry* geometry, fbxsdk::FbxScene* scene,
 						mvertex.biNormalZ = (float)barr->GetAt(bInd->GetAt(j)).mData[2];
 
 					}
-
-					if (shouldSwitchAxisSystem)
-					{
-						
-						mvertex.posZ = -mvertex.posZ;
-						
-						mvertex.normalZ = -mvertex.normalZ;
-						
-						mvertex.tangentZ = -mvertex.tangentZ;
-						
-						mvertex.biNormalZ = -mvertex.biNormalZ;
-					}
-					mvertices.push_back(mvertex);
 				}
+				
 
-				m_blendshapes.push_back(mt);
-				m_morphVertices.push_back(mvertices);
+				if (shouldSwitchAxisSystem)
+				{
+
+					mvertex.posZ = -mvertex.posZ;
+
+					mvertex.normalZ = -mvertex.normalZ;
+
+					mvertex.tangentZ = -mvertex.tangentZ;
+
+					mvertex.biNormalZ = -mvertex.biNormalZ;
+				}
+				m_mvertices.push_back(mvertex);
 			}
-			
+
+			m_gofile.GetSetBlendshapes().push_back(mt);
+			m_gofile.GetSetMorphVertices().push_back(m_mvertices);
 		}
+		
 		
 
 	}
@@ -623,7 +624,7 @@ void FileManager::GetSkeleton(fbxsdk::FbxNode* node, fbxsdk::FbxScene* scene)
 	scene->GetGlobalSettings().SetTimeMode(FbxTime::ConvertFrameRateToTimeMode((double)m_fps));
 	auto timeMode = scene->GetGlobalSettings().GetTimeMode();
 	int boneCount = skin->GetClusterCount();
-	m_fileinfo.animationLenght = (float)timeInfo.GetFrameCountPrecise();
+	m_gofile.GetSetFileInfo().animationLenght = (float)timeInfo.GetFrameCountPrecise();
 	
 	for (int bone = 0; bone < boneCount; bone++)
 	{
@@ -691,7 +692,7 @@ void FileManager::GetSkeleton(fbxsdk::FbxNode* node, fbxsdk::FbxScene* scene)
 		strcpy_s(offset.boneParentName, parentName);
 		offset.boneChildCount = (unsigned short)skin->GetCluster(bone)->GetLink()->GetChildCount();
 		offset.boneIndex = (unsigned short)bone;
-		m_offsetMatrices.push_back(offset);
+		m_gofile.GetSetSkeletonOffsetMatrices().push_back(offset);
 		Array<GOFile::SkeletonKeyFrame> skeletonkeyframearr;
 		for (FbxLongLong frame = start.GetFrameCount(timeMode); frame <= stop.GetFrameCount(timeMode); frame++)
 		{
@@ -736,7 +737,7 @@ void FileManager::GetSkeleton(fbxsdk::FbxNode* node, fbxsdk::FbxScene* scene)
 			skeletonkeyframearr.push_back(skeletonKeyFrame);
 			
 		}
-		m_keyframeMatrices.push_back(skeletonkeyframearr);
+		m_gofile.GetSetSkeletonKeyFrameMatrices().push_back(skeletonkeyframearr);
 	}
 }
 //I need to double check this is an accurate way of getting vertex data.
@@ -917,151 +918,158 @@ void FileManager::GetVerticesAndIndices(Array<GOFile::VERTEX>& vertices, Array<u
 			{
 				assert(0);
 			}
-			if (elementTangent->GetMappingMode() == FbxGeometryElement::eByControlPoint)
+			if (elementTangent)
 			{
-				controlPointTangent = true;
-				if (elementTangent->GetReferenceMode() == FbxGeometryElement::eDirect)
+				if (elementTangent->GetMappingMode() == FbxGeometryElement::eByControlPoint)
 				{
-					FbxVector4 tangent = elementTangent->GetDirectArray().GetAt(controlPointIndex);
-					tangent = inverseT.MultR(tangent);
-					tangent.Normalize();
-					FbxDouble4 double4;
-					double4.mData[0] = tangent.mData[0];
-					double4.mData[1] = tangent.mData[1];
-					double4.mData[2] = tangent.mData[2];
-					double4.mData[3] = tangent.mData[3];
-					tangentVector.push_back(double4);
-				}
-				else if (elementTangent->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
-				{
-					int id = elementTangent->GetIndexArray().GetAt(controlPointIndex);
-					FbxVector4 tangent = elementTangent->GetDirectArray().GetAt(id);
-					tangent = inverseT.MultR(tangent);
-					tangent.Normalize();
-					FbxDouble4 double4;
-					double4.mData[0] = tangent.mData[0];
-					double4.mData[1] = tangent.mData[1];
-					double4.mData[2] = tangent.mData[2];
-					double4.mData[3] = tangent.mData[3];
-					tangentVector.push_back(double4);
-				}
-				else
-				{
-					assert(0);
-				}
+					controlPointTangent = true;
+					if (elementTangent->GetReferenceMode() == FbxGeometryElement::eDirect)
+					{
+						FbxVector4 tangent = elementTangent->GetDirectArray().GetAt(controlPointIndex);
+						tangent = inverseT.MultR(tangent);
+						tangent.Normalize();
+						FbxDouble4 double4;
+						double4.mData[0] = tangent.mData[0];
+						double4.mData[1] = tangent.mData[1];
+						double4.mData[2] = tangent.mData[2];
+						double4.mData[3] = tangent.mData[3];
+						tangentVector.push_back(double4);
+					}
+					else if (elementTangent->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
+					{
+						int id = elementTangent->GetIndexArray().GetAt(controlPointIndex);
+						FbxVector4 tangent = elementTangent->GetDirectArray().GetAt(id);
+						tangent = inverseT.MultR(tangent);
+						tangent.Normalize();
+						FbxDouble4 double4;
+						double4.mData[0] = tangent.mData[0];
+						double4.mData[1] = tangent.mData[1];
+						double4.mData[2] = tangent.mData[2];
+						double4.mData[3] = tangent.mData[3];
+						tangentVector.push_back(double4);
+					}
+					else
+					{
+						assert(0);
+					}
 
-			}
-			else if (elementTangent->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
-			{
+				}
+				else if (elementTangent->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
+				{
 
-				if (elementTangent->GetReferenceMode() == FbxGeometryElement::eDirect)
-				{
-					FbxVector4 tangent = elementTangent->GetDirectArray().GetAt(controlPointIndex);
-					tangent = inverseT.MultR(tangent);
-					tangent.Normalize();
-					FbxDouble4 double4;
-					double4.mData[0] = tangent.mData[0];
-					double4.mData[1] = tangent.mData[1];
-					double4.mData[2] = tangent.mData[2];
-					double4.mData[3] = tangent.mData[3];
-					SortIndices(tangentVector, tangentIndices, double4, indiceTangent);
-					
-				}
-				else if (elementTangent->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
-				{
-					int id = elementTangent->GetIndexArray().GetAt(controlPointIndex);
-					FbxVector4 tangent = elementTangent->GetDirectArray().GetAt(id);
-					tangent = inverseT.MultR(tangent);
-					tangent.Normalize();
-					FbxDouble4 double4;
-					double4.mData[0] = tangent.mData[0];
-					double4.mData[1] = tangent.mData[1];
-					double4.mData[2] = tangent.mData[2];
-					double4.mData[3] = tangent.mData[3];
-					SortIndices(tangentVector, tangentIndices, double4, indiceTangent);
-				}
-				else
-				{
-					assert(0);
-				}
+					if (elementTangent->GetReferenceMode() == FbxGeometryElement::eDirect)
+					{
+						FbxVector4 tangent = elementTangent->GetDirectArray().GetAt(controlPointIndex);
+						tangent = inverseT.MultR(tangent);
+						tangent.Normalize();
+						FbxDouble4 double4;
+						double4.mData[0] = tangent.mData[0];
+						double4.mData[1] = tangent.mData[1];
+						double4.mData[2] = tangent.mData[2];
+						double4.mData[3] = tangent.mData[3];
+						SortIndices(tangentVector, tangentIndices, double4, indiceTangent);
 
-			}
-			else
-			{
-				assert(0);
-			}
-			if (elementBiNormal->GetMappingMode() == FbxGeometryElement::eByControlPoint)
-			{
-				controlPointBiNormal = true;
-				if (elementBiNormal->GetReferenceMode() == FbxGeometryElement::eDirect)
-				{
-					FbxVector4 biNormal = elementBiNormal->GetDirectArray().GetAt(controlPointIndex);
-					biNormal = inverseT.MultR(biNormal);
-					biNormal.Normalize();
-					FbxDouble4 double4;
-					double4.mData[0] = biNormal.mData[0];
-					double4.mData[1] = biNormal.mData[1];
-					double4.mData[2] = biNormal.mData[2];
-					double4.mData[3] = biNormal.mData[3];
-					binormalVector.push_back(double4);
-				}
-				else if (elementBiNormal->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
-				{
-					int id = elementBiNormal->GetIndexArray().GetAt(controlPointIndex);
-					FbxVector4 biNormal = elementBiNormal->GetDirectArray().GetAt(id);
-					biNormal = inverseT.MultR(biNormal);
-					biNormal.Normalize();
-					FbxDouble4 double4;
-					double4.mData[0] = biNormal.mData[0];
-					double4.mData[1] = biNormal.mData[1];
-					double4.mData[2] = biNormal.mData[2];
-					double4.mData[3] = biNormal.mData[3];
-					binormalVector.push_back(double4);
+					}
+					else if (elementTangent->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
+					{
+						int id = elementTangent->GetIndexArray().GetAt(controlPointIndex);
+						FbxVector4 tangent = elementTangent->GetDirectArray().GetAt(id);
+						tangent = inverseT.MultR(tangent);
+						tangent.Normalize();
+						FbxDouble4 double4;
+						double4.mData[0] = tangent.mData[0];
+						double4.mData[1] = tangent.mData[1];
+						double4.mData[2] = tangent.mData[2];
+						double4.mData[3] = tangent.mData[3];
+						SortIndices(tangentVector, tangentIndices, double4, indiceTangent);
+					}
+					else
+					{
+						assert(0);
+					}
+
 				}
 				else
 				{
 					assert(0);
 				}
 			}
-			else if (elementBiNormal->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
+			if (elementBiNormal)
 			{
-
-				if (elementBiNormal->GetReferenceMode() == FbxGeometryElement::eDirect)
+				if (elementBiNormal->GetMappingMode() == FbxGeometryElement::eByControlPoint)
 				{
-					FbxVector4 biNormal = elementBiNormal->GetDirectArray().GetAt(controlPointIndex);
-					biNormal = inverseT.MultR(biNormal);
-					biNormal.Normalize();
-					FbxDouble4 double4;
-					double4.mData[0] = biNormal.mData[0];
-					double4.mData[1] = biNormal.mData[1];
-					double4.mData[2] = biNormal.mData[2];
-					double4.mData[3] = biNormal.mData[3];
-					SortIndices(binormalVector, biNormalIndices, double4, indiceBinormal);
-					
+					controlPointBiNormal = true;
+					if (elementBiNormal->GetReferenceMode() == FbxGeometryElement::eDirect)
+					{
+						FbxVector4 biNormal = elementBiNormal->GetDirectArray().GetAt(controlPointIndex);
+						biNormal = inverseT.MultR(biNormal);
+						biNormal.Normalize();
+						FbxDouble4 double4;
+						double4.mData[0] = biNormal.mData[0];
+						double4.mData[1] = biNormal.mData[1];
+						double4.mData[2] = biNormal.mData[2];
+						double4.mData[3] = biNormal.mData[3];
+						binormalVector.push_back(double4);
+					}
+					else if (elementBiNormal->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
+					{
+						int id = elementBiNormal->GetIndexArray().GetAt(controlPointIndex);
+						FbxVector4 biNormal = elementBiNormal->GetDirectArray().GetAt(id);
+						biNormal = inverseT.MultR(biNormal);
+						biNormal.Normalize();
+						FbxDouble4 double4;
+						double4.mData[0] = biNormal.mData[0];
+						double4.mData[1] = biNormal.mData[1];
+						double4.mData[2] = biNormal.mData[2];
+						double4.mData[3] = biNormal.mData[3];
+						binormalVector.push_back(double4);
+					}
+					else
+					{
+						assert(0);
+					}
 				}
-				else if (elementBiNormal->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
+				else if (elementBiNormal->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
 				{
-					int id = elementBiNormal->GetIndexArray().GetAt(controlPointIndex);
-					FbxVector4 biNormal = elementBiNormal->GetDirectArray().GetAt(id);
-					biNormal = inverseT.MultR(biNormal);
-					biNormal.Normalize();
-					FbxDouble4 double4;
-					double4.mData[0] = biNormal.mData[0];
-					double4.mData[1] = biNormal.mData[1];
-					double4.mData[2] = biNormal.mData[2];
-					double4.mData[3] = biNormal.mData[3];
-					SortIndices(binormalVector, biNormalIndices, double4, indiceBinormal);
+
+					if (elementBiNormal->GetReferenceMode() == FbxGeometryElement::eDirect)
+					{
+						FbxVector4 biNormal = elementBiNormal->GetDirectArray().GetAt(controlPointIndex);
+						biNormal = inverseT.MultR(biNormal);
+						biNormal.Normalize();
+						FbxDouble4 double4;
+						double4.mData[0] = biNormal.mData[0];
+						double4.mData[1] = biNormal.mData[1];
+						double4.mData[2] = biNormal.mData[2];
+						double4.mData[3] = biNormal.mData[3];
+						SortIndices(binormalVector, biNormalIndices, double4, indiceBinormal);
+
+					}
+					else if (elementBiNormal->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
+					{
+						int id = elementBiNormal->GetIndexArray().GetAt(controlPointIndex);
+						FbxVector4 biNormal = elementBiNormal->GetDirectArray().GetAt(id);
+						biNormal = inverseT.MultR(biNormal);
+						biNormal.Normalize();
+						FbxDouble4 double4;
+						double4.mData[0] = biNormal.mData[0];
+						double4.mData[1] = biNormal.mData[1];
+						double4.mData[2] = biNormal.mData[2];
+						double4.mData[3] = biNormal.mData[3];
+						SortIndices(binormalVector, biNormalIndices, double4, indiceBinormal);
+					}
+					else
+					{
+						assert(0);
+					}
+
 				}
 				else
 				{
 					assert(0);
 				}
-
 			}
-			else
-			{
-				assert(0);
-			}
+			
 
 
 
@@ -1118,14 +1126,14 @@ void FileManager::GetVerticesAndIndices(Array<GOFile::VERTEX>& vertices, Array<u
 				vertex.biNormalX = (float)indexStruct.b.mData[0];
 				vertex.biNormalY = (float)indexStruct.b.mData[1];
 				vertex.biNormalZ = -(float)indexStruct.b.mData[2];
-				for (int j=0; j< m_blendshapes.size(); j++)
+				for (int j=0; j< m_gofile.GetSetBlendshapes().size(); j++)
 				{
 					unsigned int cpIndex = positionIndices[i];
-					for (int k = 0;k <m_morphIndices[j].size(); k++)
+					for (int k = 0;k < m_gofile.GetSetMorphIndicies()[j].size(); k++)
 					{
-						if (cpIndex == m_morphIndices[j][k].targetIndex)
+						if (cpIndex == m_gofile.GetSetMorphIndicies()[j][k].targetIndex)
 						{
-							m_morphIndices[j][k].sourceIndex = indexCounter;
+							m_gofile.GetSetMorphIndicies()[j][k].sourceIndex = indexCounter;
 							
 						}
 					}

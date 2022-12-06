@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "GameObject.h"
 
-GameObject::GameObject(Vector3& scale, Quaternion& rotation, Vector3& position)
+GameObject::GameObject(const Vector3& scale, const Quaternion& rotation, const Vector3& position)
 {
     m_transform = new Transform();
     m_transform->s.push_back(scale);
@@ -10,12 +10,12 @@ GameObject::GameObject(Vector3& scale, Quaternion& rotation, Vector3& position)
    
 }
 
-void GameObject::SetScale(Vector3& s, int id = 0)
+void GameObject::SetScale(const Vector3& s, int id)
 {
     m_transform->s[id] = s;
 }
 
-const Matrix& GameObject::GetLocalWorld(int id = 0)
+const Matrix& GameObject::GetLocalWorld(int id)
 {
    
    Matrix sm = XMMatrixScalingFromVector(m_transform->s[id]);
@@ -27,14 +27,14 @@ const Matrix& GameObject::GetLocalWorld(int id = 0)
        rm = XMMatrixIdentity();
    if(m_omitT)
        tm = XMMatrixIdentity();
-   Matrix world = sm * rm * tm;
-   return world;
+   m_world = sm * rm * tm;
+   return m_world;
 
 
 }
 
 
-const Matrix& GameObject::GetGlobalWorld(int id = 0)
+const Matrix& GameObject::GetGlobalWorld(int id )
 {
     Matrix sm = XMMatrixScalingFromVector(m_transform->s[id]);
     Matrix rm = XMMatrixRotationQuaternion(m_transform->r[id]);
@@ -45,18 +45,18 @@ const Matrix& GameObject::GetGlobalWorld(int id = 0)
         rm = XMMatrixIdentity();
     if (m_omitT)
         tm = XMMatrixIdentity();
-    Matrix world = sm * rm * tm;
-    world *= GetParent();
-    return world;
+    m_world = sm * rm * tm;
+    m_world *= GetParent();
+    return m_world;
 }
 
-const Matrix& GameObject::GetParent(int id = 0)
+const Matrix& GameObject::GetParent(int id )
 {
     Matrix sm = XMMatrixScalingFromVector(m_parenttransform->s[id]);
     Matrix rm = XMMatrixRotationQuaternion(m_parenttransform->r[id]);
     Matrix tm = XMMatrixTranslationFromVector(m_parenttransform->t[id]);
-    Matrix world = sm * rm * tm;
-    return world;
+    m_parentworld = sm * rm * tm;
+    return m_parentworld;
 }
 
 GameObject::~GameObject()

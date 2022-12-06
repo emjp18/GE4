@@ -2,7 +2,7 @@
 #ifndef FILEMANAGER_H
 #define FILEMANAGER_H
 #include "pch.h"
-#include "Array.h"
+#include "Game_Object_File.h"
 #include "Map.h"
 #include <fbxsdk.h>
 #include <mutex>
@@ -80,18 +80,6 @@ public:
     // Prevents any type of copy or new instance
     FileManager(const FileManager&) = delete;
     void operator=(const FileManager&) = delete;
-	Array<GOFile::MESH>& GetMeshes() { return m_meshes; }
-	Array<Array<GOFile::VERTEX>>& GetVertices() { return m_vertices; }
-	Array<Array<unsigned int>>& GetIndices() { return m_indices; }
-	Array<GOFile::MORPH_TARGET>& GetBlendShapes() { return m_blendshapes; }
-	Array<Array<GOFile::MORPH_VERTEX>>& GetMorphVertices() { return m_morphVertices; }
-	Array<Array<GOFile::MORPH_INDEX>>& GetMorphIndices() { return m_morphIndices; }
-	Array<Array<GOFile::MORPH_KEYFRAME>>& GetMorphKeyframes() {return m_morphKeyframes;}
-	Array<GOFile::MATERIAL>& GetMaterials() {return m_materials;}
-	Array<GOFile::LIGHT>& GetLights() {return m_lights;}
-	Array<GOFile::SkeletonOffset>& GetOffsetMatrices() {return m_offsetMatrices; } 
-	Array<Array<GOFile::SkeletonKeyFrame>>& GetSkeletonKeyFrames() { return m_keyframeMatrices; }
-	GOFile::FILE_INFO& GetFileInfo() { return m_fileinfo; }
     static FileManager& Get()
     {
         static FileManager instance;
@@ -100,27 +88,17 @@ public:
 	//Always left handed and always global space
 	//Only one animation per file.
 	void ImportFBX(const char* path);
-	void Clear();
+
 	void Write();
 	~FileManager();
 	void ShutDown();
+	Game_Object_File& GetGO_FILE() { return m_gofile; }
 private:
 	FbxManager* m_sdkManager = nullptr;
 	FbxScene* m_scene = nullptr;
 	FbxAxisSystem m_currentAxisSystem;
-	Array<GOFile::MESH> m_meshes;
-	Array<Array<GOFile::VERTEX>> m_vertices;
-	Array<Array<unsigned int>> m_indices;
-	Array<GOFile::MORPH_TARGET> m_blendshapes;
-	Array<Array<GOFile::MORPH_VERTEX>> m_morphVertices;
-	Array<Array<GOFile::MORPH_INDEX>> m_morphIndices;
-	Array<Array<GOFile::MORPH_KEYFRAME>> m_morphKeyframes;
-	Array<GOFile::MATERIAL> m_materials;
-	Array<GOFile::LIGHT> m_lights;
-	Array<GOFile::SkeletonOffset> m_offsetMatrices;
-	Array<Array<GOFile::SkeletonKeyFrame>> m_keyframeMatrices;
+	Game_Object_File m_gofile;
 	float m_fps = 30.0f;
-	GOFile::FILE_INFO m_fileinfo;
 	void GetMesh(fbxsdk::FbxNode* node, fbxsdk::FbxScene* scene);
 	void GetNodes(FbxNode* node);
 	void getMaterial();
@@ -134,7 +112,9 @@ private:
 	//The vertices must be after skeleton and blend shapes
 	string m_path = "../Content";
 	void GetRootNode();
-	
+	Array<GOFile::MORPH_VERTEX> m_mvertices;
+	Array<GOFile::VERTEX> m_vertices;
+	Array<unsigned int> m_indices;
 };
 #endif
 

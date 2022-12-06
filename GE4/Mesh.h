@@ -12,18 +12,18 @@ class Mesh :
     public GameObject
 {
 public:
-    Mesh( Vector3 & scale, Quaternion & rotation, Vector3 & position,
+    Mesh(const Vector3& scale = Vector3::One,const Quaternion& rotation = Quaternion::Identity, const Vector3& position = Vector3::Zero,
         bool readwriteBuffer = false );
     virtual ~Mesh();
     bool Draw(Camera* camera, ID3D11DeviceContext* context);
     // Inherited via GameObject
-    virtual void SetRotation(Quaternion& r, int id = 0) override;
-    virtual void SetTranslation(Vector3& t, int id = 0) override;
+    virtual void SetRotation(const Quaternion& r, int id = 0) override;
+    virtual void SetTranslation(const Vector3& t, int id = 0) override;
     void setIndices(ID3D11Device* device,  Array<unsigned int>& indices);
     void SetInstanceData(ID3D11Device* device,  Array<INSTANCE_DATA>& instanceData);
     void SetVertices(ID3D11Device* device, Array<VERTEX>& vertices);
     bool GetInstanced() { return m_instanced; }
-    virtual void SetScale(Vector3& t, int id = 0) override;
+    virtual void SetScale(const Vector3& t, int id = 0) override;
     bool g_cull = true;
     bool g_render = true;
     bool g_update = true;

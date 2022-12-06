@@ -8,12 +8,12 @@ class Item :
     public GameObject, public GameLogic
 {
 public:
-    Item(Vector3& s, Quaternion& r, Vector3& t);
+    Item(const Vector3& s, const Quaternion& r, const Vector3& t);
     virtual ~Item();
-    void AddMesh(string path);
+    void AddMesh(string tag);
     // Inherited via GameObject
-    virtual void SetRotation(Quaternion& r, int id = 0) override;
-    virtual void SetTranslation(Vector3& t, int id = 0) override;
+    virtual void SetRotation(const Quaternion& r, int id = 0) override;
+    virtual void SetTranslation(const Vector3& t, int id = 0) override;
 private:
     Array<Mesh> m_meshes;
 };

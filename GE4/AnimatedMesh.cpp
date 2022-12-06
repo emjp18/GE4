@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "AnimatedMesh.h"
 
-void AnimatedMesh::SetRotation(Quaternion& r, int id)
+void AnimatedMesh::SetRotation(const Quaternion& r, int id)
 {
 }
 
-void AnimatedMesh::SetTranslation(Vector3& t, int id)
+void AnimatedMesh::SetTranslation(const Vector3& t, int id)
 {
 }

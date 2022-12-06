@@ -7,7 +7,7 @@ class Camera :
     public GameObject, public GameLogic
 {
     // Inherited via GameObject
-    virtual void SetRotation(Quaternion& r, int id = 0) override;
-    virtual void SetTranslation(Vector3& t, int id = 0) override;
+    virtual void SetRotation(const Quaternion& r, int id = 0) override;
+    virtual void SetTranslation(const Vector3& t, int id = 0) override;
 };
 #endif //CAMERA_H

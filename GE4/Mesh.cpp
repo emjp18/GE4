@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Mesh.h"
 
-Mesh::Mesh(Vector3& scale, Quaternion& rotation, Vector3& position,
+Mesh::Mesh(const Vector3& scale, const Quaternion& rotation, const Vector3& position,
 	bool readwriteBuffer)
 	:GameObject( scale, rotation, position )
 {
@@ -17,13 +17,13 @@ bool Mesh::Draw(Camera* camera, ID3D11DeviceContext* context)
     return false;
 }
 
-void Mesh::SetRotation(Quaternion& r, int id)
+void Mesh::SetRotation(const Quaternion& r, int id)
 {
 	m_transform->r[id] = r;
 
 }
 
-void Mesh::SetTranslation(Vector3& t, int id)
+void Mesh::SetTranslation(const Vector3& t, int id)
 {
 	m_transform->t[id] = t;
 }
@@ -104,7 +104,7 @@ void Mesh::SetVertices(ID3D11Device* device, Array<VERTEX>& vertices)
 	CreateVertexBuffer(device, m_vertices.Data(), sizeof(VERTEX) * (UINT)m_vertices.size());
 }
 
-void Mesh::SetScale(Vector3& t, int id)
+void Mesh::SetScale(const Vector3& t, int id)
 {
 	m_transform->t[id] = t;
 }

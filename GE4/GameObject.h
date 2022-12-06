@@ -24,22 +24,22 @@ enum class PHYSICS_TYPE
 class GameObject
 {
 private:
+	Matrix m_world;
+	Matrix m_parentworld;
 protected:
-	Matrix m_parentmatrix;
-	Matrix m_matrix;
 	Transform* m_transform = 0;
 	Transform* m_parenttransform = 0;
-	virtual void SetScale(Vector3& s, int id = 0);
+	virtual void SetScale(const Vector3& s, int id = 0);
 	bool m_omitS = false;
 	bool m_omitR = false;
 	bool m_omitT = false;
 public:
-	GameObject(Vector3& scale, Quaternion& rotation, Vector3& position);
+	GameObject(const Vector3& scale, const Quaternion& rotation, const Vector3& position);
 	const Matrix& GetLocalWorld(int id = 0);
 	const Matrix& GetGlobalWorld(int id = 0);
 	const Matrix& GetParent(int id = 0);
-	virtual void SetRotation(Quaternion& r, int id = 0) = 0;
-	virtual void SetTranslation(Vector3& t, int id = 0) = 0;
+	virtual void SetRotation(const Quaternion& r, int id = 0) = 0;
+	virtual void SetTranslation(const Vector3& t, int id = 0) = 0;
 	Transform* GetTransform() { return m_transform; }
 	Transform* GetParentTransform() { return m_parenttransform; }
 	void SetParentTransform(Transform* transform) { m_parenttransform = transform; }

@@ -9,8 +9,8 @@ Engine::Engine(const HINSTANCE& hinstance)
 	m_filemanager = new FileManager();
 	m_sceneManager = new SceneManager();
 	m_rendermanager = new RenderManager();
-	m_sceneManager->Get().Startup();
 	m_filemanager->Get().Startup();
+	m_sceneManager->Get().Startup();
 	m_rendermanager->Get().Startup();
 	
 }

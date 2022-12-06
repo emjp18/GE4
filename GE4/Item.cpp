@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Item.h"
 
-Item::Item(Vector3& s, Quaternion& r, Vector3& t)
+Item::Item(const Vector3& s, const Quaternion& r, const Vector3& t)
 	:GameObject(s, r, t), GameLogic()
 {
 }
@@ -10,20 +10,20 @@ Item::~Item()
 {
 }
 
-void Item::AddMesh(string path)
+void Item::AddMesh(string tag)
 {
-	GOFile::MESH m = SceneManager::Get().GetMeshPool()[0];
+	Game_Object_File file = SceneManager::Get().GetFilePool()[0]; //change this to a map
 	
-	Mesh mesh(m_transform->s[0], m_transform->r[0], m_transform->t[0]);
+	Mesh mesh;
 	mesh.SetParentTransform(m_transform);
-	mesh.SetVertices(RenderManager::Get().getDevice(),)
-
+	mesh.SetVertices(RenderManager::Get().getDevice(), file.GetSetVertices()[0]);
+	mesh.setIndices(RenderManager::Get().getDevice(), file.GetSetIndicies()[0]);
 }
 
-void Item::SetRotation(Quaternion& r, int id)
+void Item::SetRotation(const Quaternion& r, int id)
 {
 }
 
-void Item::SetTranslation(Vector3& t, int id)
+void Item::SetTranslation(const Vector3& t, int id)
 {
 }

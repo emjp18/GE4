@@ -121,6 +121,14 @@ namespace CUSTOM_CONTAINER
         return length;
     }
 
+    template<typename DT>
+    inline void Array<DT>::clear()
+    {
+        delete[]arr;
+        ll n= 100;
+        capacity = n, arr = new DT[n], length = 0;
+    }
+
    
 
     // Template class to return the popped element
@@ -148,7 +156,7 @@ namespace CUSTOM_CONTAINER
         // size of vector print Error
         if (index >= length) {
             
-            exit(0);
+            return *(arr + length);
         }
 
         // else return value at that index
