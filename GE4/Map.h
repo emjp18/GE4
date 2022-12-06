@@ -1,4 +1,6 @@
 #pragma once
+#ifndef MAP_H
+#define MAP_H
 #include "pch.h"
 using namespace std;
 
@@ -512,3 +514,4 @@ namespace CUSTOM_CONTAINER
 }
 
 
+#endif //MAP_H

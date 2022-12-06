@@ -27,5 +27,5 @@ public:
 	static bool g_shouldResizeOld;
 };
 
-#endif
+#endif //WINDOW_H
 

@@ -6,8 +6,10 @@ int CUSTOM_CONTAINER::Map::cnt = 0;
 Engine::Engine(const HINSTANCE& hinstance)
 {
 	m_window = new Window(hinstance);
+	m_sceneManager = new SceneManager();
 	m_filemanager = new FileManager();
 	m_rendermanager = new RenderManager();
+	m_sceneManager->Get().Startup();
 	m_filemanager->Get().Startup();
 	m_rendermanager->Get().Startup();
 	
@@ -17,9 +19,10 @@ Engine::~Engine()
 {
 	m_rendermanager->Get().ShutDown();
 	m_filemanager->Get().ShutDown();
-
+	m_sceneManager->Get().ShutDown();
 	RELEASE(m_rendermanager);
 	RELEASE(m_filemanager);
+	RELEASE(m_sceneManager);
 	RELEASE(m_window);
 
 

@@ -66,4 +66,4 @@ public:
 	bool GetIntitialized() { return m_initialized; }
 	void Render();
 };
-#endif
+#endif //RENDERMANAGER_H

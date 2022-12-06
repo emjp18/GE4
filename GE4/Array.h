@@ -1,4 +1,6 @@
 #pragma once
+#ifndef ARRAY_H
+#define ARRAY_H
 #define ll long long
 using namespace std;
 namespace CUSTOM_CONTAINER
@@ -24,7 +26,7 @@ namespace CUSTOM_CONTAINER
         explicit Array(ll = 100);
         
         ~Array();
-       
+        DT* Data();
         // Function that returns the number of
         // elements in array after pushing the data
         ll push_back(DT);
@@ -96,6 +98,12 @@ namespace CUSTOM_CONTAINER
     inline Array<DT>::~Array()
     {
         delete[]arr;
+    }
+
+    template<typename DT>
+    inline DT* Array<DT>::Data()
+    {
+        return arr;
     }
    
     // Template class to insert the element
@@ -207,3 +215,4 @@ namespace CUSTOM_CONTAINER
         return -1;
     }
 }
+#endif //ARRAY_H

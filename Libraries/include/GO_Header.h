@@ -61,7 +61,7 @@ namespace GOFile
 		float biNormalZ = 0.0f;
 		float skinWeight[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		short boneIndex[4] = { -1,-1,-1,-1 };
-		char boneName[4][100] = { {' '},{' '},{' '},{' '} };
+		
 	};
 
 	struct MORPH_TARGET

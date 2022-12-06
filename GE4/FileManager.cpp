@@ -1136,7 +1136,7 @@ void FileManager::GetVerticesAndIndices(Array<GOFile::VERTEX>& vertices, Array<u
 				for (int j = 0; j < (int)skinningData[positionIndices[i]].boneName.size(); j++)
 				{
 
-					strcpy_s(vertex.boneName[j], skinningData[positionIndices[i]].boneName[j]);
+					
 					vertex.boneIndex[j] = skinningData[positionIndices[i]].boneIndex[j];
 					vertex.skinWeight[j] = skinningData[positionIndices[i]].skinWeight[j];
 					if (j > 3)
