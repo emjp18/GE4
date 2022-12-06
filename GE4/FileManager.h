@@ -80,8 +80,18 @@ public:
     // Prevents any type of copy or new instance
     FileManager(const FileManager&) = delete;
     void operator=(const FileManager&) = delete;
-    
-    
+	Array<GOFile::MESH>& GetMeshes() { return m_meshes; }
+	Array<Array<GOFile::VERTEX>>& GetVertices() { return m_vertices; }
+	Array<Array<unsigned int>>& GetIndices() { return m_indices; }
+	Array<GOFile::MORPH_TARGET>& GetBlendShapes() { return m_blendshapes; }
+	Array<Array<GOFile::MORPH_VERTEX>>& GetMorphVertices() { return m_morphVertices; }
+	Array<Array<GOFile::MORPH_INDEX>>& GetMorphIndices() { return m_morphIndices; }
+	Array<Array<GOFile::MORPH_KEYFRAME>>& GetMorphKeyframes() {return m_morphKeyframes;}
+	Array<GOFile::MATERIAL>& GetMaterials() {return m_materials;}
+	Array<GOFile::LIGHT>& GetLights() {return m_lights;}
+	Array<GOFile::SkeletonOffset>& GetOffsetMatrices() {return m_offsetMatrices; } 
+	Array<Array<GOFile::SkeletonKeyFrame>>& GetSkeletonKeyFrames() { return m_keyframeMatrices; }
+	GOFile::FILE_INFO& GetFileInfo() { return m_fileinfo; }
     static FileManager& Get()
     {
         static FileManager instance;
@@ -90,7 +100,7 @@ public:
 	//Always left handed and always global space
 	//Only one animation per file.
 	void ImportFBX(const char* path);
-	
+	void Clear();
 	void Write();
 	~FileManager();
 	void ShutDown();
@@ -124,6 +134,7 @@ private:
 	//The vertices must be after skeleton and blend shapes
 	string m_path = "../Content";
 	void GetRootNode();
+	
 };
 #endif
 

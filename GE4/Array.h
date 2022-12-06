@@ -25,7 +25,7 @@ namespace CUSTOM_CONTAINER
     public:
         explicit Array(ll = 100);
         
-        ~Array();
+        virtual ~Array();
         DT* Data();
         // Function that returns the number of
         // elements in array after pushing the data

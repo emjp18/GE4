@@ -3,9 +3,13 @@
 
 Mesh::Mesh(Vector3& scale, Quaternion& rotation, Vector3& position,
 	bool readwriteBuffer)
-	:GameObject(scale, rotation, position)
+	:GameObject( scale, rotation, position )
 {
 	m_readwritebuffer = readwriteBuffer;
+}
+
+Mesh::~Mesh()
+{
 }
 
 bool Mesh::Draw(Camera* camera, ID3D11DeviceContext* context)

@@ -12,8 +12,9 @@ class Mesh :
     public GameObject
 {
 public:
-    Mesh(Vector3& scale, Quaternion& rotation, Vector3& position,
-        bool readwriteBuffer);
+    Mesh( Vector3 & scale, Quaternion & rotation, Vector3 & position,
+        bool readwriteBuffer = false );
+    virtual ~Mesh();
     bool Draw(Camera* camera, ID3D11DeviceContext* context);
     // Inherited via GameObject
     virtual void SetRotation(Quaternion& r, int id = 0) override;

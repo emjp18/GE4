@@ -3,6 +3,8 @@
 #define GAMEOBJECT_H
 #include "Array.h"
 #include "Map.h"
+#include "SceneManager.h"
+#include "RenderManager.h"
 using namespace CUSTOM_CONTAINER;
 using namespace GOFile;
 struct Transform
@@ -39,7 +41,8 @@ public:
 	virtual void SetRotation(Quaternion& r, int id = 0) = 0;
 	virtual void SetTranslation(Vector3& t, int id = 0) = 0;
 	Transform* GetTransform() { return m_transform; }
-	Transform* GetSetParentTransform() { return m_parenttransform; }
+	Transform* GetParentTransform() { return m_parenttransform; }
+	void SetParentTransform(Transform* transform) { m_parenttransform = transform; }
 	void SetOmitTransforms(bool omits, bool omitr = false, bool omitt = false) { m_omitS = omits; m_omitR = omitr; m_omitT = omitt; }
 	virtual ~GameObject();
 };
