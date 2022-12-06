@@ -101,7 +101,6 @@ private:
 	Array<GOFile::MESH> m_meshes;
 	Array<Array<GOFile::VERTEX>> m_vertices;
 	Array<Array<unsigned int>> m_indices;
-	void GetNodes(FbxNode* node);
 	Array<GOFile::MORPH_TARGET> m_blendshapes;
 	Array<Array<GOFile::MORPH_VERTEX>> m_morphVertices;
 	Array<Array<GOFile::MORPH_INDEX>> m_morphIndices;

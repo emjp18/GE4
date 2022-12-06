@@ -1,10 +1,12 @@
 #include "pch.h"
 #include "Window.h"
 bool Window::g_shouldResize = false;
+bool Window::g_shouldResizeOld = false;
 HWND Window::m_hwnd = nullptr;
 size_t Window::g_currResX = g_mediumResX;
 size_t Window::g_currResY = g_mediumResY;
-
+size_t Window::g_oldResX = g_mediumResX;
+size_t Window::g_oldResY = g_mediumResY;
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT umsg, WPARAM wParam, LPARAM lParam);
 Window::Window(const HINSTANCE& hinstance)
 {
@@ -68,17 +70,7 @@ LRESULT WindowProc(HWND hwnd, UINT umsg, WPARAM wParam, LPARAM lParam)
 		return 0;
 	case WM_WINDOWPOSCHANGED:
 	{
-		/*if (Renderer::g_isInitiated)
-		{
-
-			HRESULT hr = Renderer::getswapChain()->GetFullscreenState(&Renderer::g_currentlyInFullscreen, nullptr);
-			assert(SUCCEEDED(hr));
-			if (Renderer::g_currentlyInFullscreen != Renderer::g_pastInFullscreen)
-			{
-				Window::resize();
-
-			}
-		}*/
+		
 		Window::Resize();
 	}
 	case WM_INPUT:

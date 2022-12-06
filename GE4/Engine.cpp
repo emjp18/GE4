@@ -8,14 +8,15 @@ Engine::Engine(const HINSTANCE& hinstance)
 	m_window = new Window(hinstance);
 	m_filemanager = new FileManager();
 	m_rendermanager = new RenderManager();
-	m_filemanager->Startup();
-	m_rendermanager->Startup();
+	m_filemanager->Get().Startup();
+	m_rendermanager->Get().Startup();
+	
 }
 
 Engine::~Engine()
 {
-	m_rendermanager->ShutDown();
-	m_filemanager->ShutDown();
+	m_rendermanager->Get().ShutDown();
+	m_filemanager->Get().ShutDown();
 
 	RELEASE(m_rendermanager);
 	RELEASE(m_filemanager);
@@ -48,18 +49,36 @@ void Engine::Run()
 		}
 		else
 		{
+			if (m_rendermanager->Get().GetIntitialized())
+			{
+				if (m_window->g_shouldResize == true && m_window->g_shouldResizeOld == false)
+				{
+					HRESULT hr = m_rendermanager->Get().getswapChain()->GetFullscreenState(
+						&m_rendermanager->Get().g_currentlyInFullscreen, nullptr);
+					assert(SUCCEEDED(hr));
+					if (m_rendermanager->Get().g_currentlyInFullscreen != m_rendermanager->Get().g_pastInFullscreen)
+					{
+						Resize();
+					}
 
+					m_window->g_shouldResize = false;
+				}
+				m_rendermanager->Get().Render();
+				m_rendermanager->Get().Present();
+			}
+			
 		}
 	}
 }
 
-void Engine::Resize(const HWND& hwnd)
+void Engine::Resize()
 {
-	
+	m_rendermanager->Get().Resize();
 }
 
-void Engine::ChangeRes(size_t newResX, size_t newResY, const HWND& hwnd)
+void Engine::ChangeRes(size_t newResX, size_t newResY)
 {
 	m_window->ChangeRes(newResX, newResY);
+	m_rendermanager->Get().ChangeResolution();
 	
 }

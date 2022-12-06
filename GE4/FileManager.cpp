@@ -45,19 +45,19 @@ void FileManager::GetRootNode()
 
 void FileManager::Write()
 {
-	m_fileinfo.BlendShapesCount = m_blendshapes.size();
-	m_fileinfo.lightCount = m_lights.size();
-	m_fileinfo.materialCount = m_materials.size();
-	m_fileinfo.meshCount = m_meshes.size();
-	m_fileinfo.skeletonBoneCount = m_offsetMatrices.size();
+	m_fileinfo.BlendShapesCount = (unsigned short)m_blendshapes.size();
+	m_fileinfo.lightCount = (unsigned short)m_lights.size();
+	m_fileinfo.materialCount = (unsigned short)m_materials.size();
+	m_fileinfo.meshCount = (unsigned short)m_meshes.size();
+	m_fileinfo.skeletonBoneCount = (unsigned short)m_offsetMatrices.size();
 	m_fileinfo.skeletonKeyframeCount = 0;
 	if (m_keyframeMatrices.size() > 0)
-		m_fileinfo.skeletonKeyframeCount = m_keyframeMatrices[0].size();
+		m_fileinfo.skeletonKeyframeCount = (unsigned short)m_keyframeMatrices[0].size();
 	
 	std::ofstream go;
 	go.open(m_path + ".GO", std::ios::out | std::ios::binary);
 	assert(go.is_open());
-	GOFile::TYPE fileinfo;
+	
 	
 	go.write((const char*)&m_fileinfo, sizeof(GOFile::FILE_INFO));
 	
@@ -523,30 +523,30 @@ void FileManager::GetBlendShapes(FbxGeometry* geometry, fbxsdk::FbxScene* scene,
 				{
 					GOFile::MORPH_VERTEX mvertex;
 					GOFile::MORPH_INDEX mindex;
-					mvertex.posX = cp[posIndices[j]].mData[0];
-					mvertex.posY = cp[posIndices[j]].mData[1];
-					mvertex.posZ = cp[posIndices[j]].mData[2];
+					mvertex.posX =(float)cp[posIndices[j]].mData[0];
+					mvertex.posY =(float)cp[posIndices[j]].mData[1];
+					mvertex.posZ =(float)cp[posIndices[j]].mData[2];
 					mindex.targetIndex = posIndices[j];
 
 					if (normalBool && narr && nInd->GetCount() == shape->GetControlPointIndicesCount())
 					{
-						mvertex.normalX = narr->GetAt(nInd->GetAt(j)).mData[0];
-						mvertex.normalY = narr->GetAt(nInd->GetAt(j)).mData[1];
-						mvertex.normalZ = narr->GetAt(nInd->GetAt(j)).mData[2];
+						mvertex.normalX = (float)narr->GetAt(nInd->GetAt(j)).mData[0];
+						mvertex.normalY = (float)narr->GetAt(nInd->GetAt(j)).mData[1];
+						mvertex.normalZ = (float)narr->GetAt(nInd->GetAt(j)).mData[2];
 						
 					}
 					if (tangentBool && tarr && tInd->GetCount() == shape->GetControlPointIndicesCount())
 					{
-						mvertex.tangentX = tarr->GetAt(tInd->GetAt(j)).mData[0];
-						mvertex.tangentY = tarr->GetAt(tInd->GetAt(j)).mData[1];
-						mvertex.tangentZ = tarr->GetAt(tInd->GetAt(j)).mData[2];
+						mvertex.tangentX = (float)tarr->GetAt(tInd->GetAt(j)).mData[0];
+						mvertex.tangentY = (float)tarr->GetAt(tInd->GetAt(j)).mData[1];
+						mvertex.tangentZ = (float)tarr->GetAt(tInd->GetAt(j)).mData[2];
 
 					}
 					if (biNormalsBool && barr && bInd->GetCount() == shape->GetControlPointIndicesCount())
 					{
-						mvertex.biNormalX = barr->GetAt(bInd->GetAt(j)).mData[0];
-						mvertex.biNormalY = barr->GetAt(bInd->GetAt(j)).mData[1];
-						mvertex.biNormalZ = barr->GetAt(bInd->GetAt(j)).mData[2];
+						mvertex.biNormalX = (float)barr->GetAt(bInd->GetAt(j)).mData[0];
+						mvertex.biNormalY = (float)barr->GetAt(bInd->GetAt(j)).mData[1];
+						mvertex.biNormalZ = (float)barr->GetAt(bInd->GetAt(j)).mData[2];
 
 					}
 

@@ -21,8 +21,10 @@ public:
 	static const HWND& GetHWND() { return m_hwnd; }
 	static size_t g_currResX;
 	static size_t g_currResY;
+	static size_t g_oldResX;
+	static size_t g_oldResY;
 	static bool g_shouldResize;
-
+	static bool g_shouldResizeOld;
 };
 
 #endif
